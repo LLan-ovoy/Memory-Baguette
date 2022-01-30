@@ -36,7 +36,7 @@ This a collection of blogs about data science. Productization a machine learning
 * Feature Importance
 
 ### Advanced Machine Learning
-
+* Multivariate Gradient Descent
 
 
 ### Fundamental Deep Learning
