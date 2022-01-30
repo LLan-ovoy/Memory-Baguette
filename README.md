@@ -28,10 +28,10 @@ This a collection of blogs about data science. Productization a machine learning
 ### Data Science Skills
 * Data Aquisition
 * Experiments
+* From SQL to NoSQL
 
 ### Introduction to Machine Learning
 * Gradient Descent
-* Linear regression
 * Tree based methods
 * Feature Importance
 
