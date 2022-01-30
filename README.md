@@ -17,11 +17,37 @@ This a collection of blogs about data science. Productization a machine learning
 
 ## Content
 
-#### Fundamental knowledge
+### Fundamental knowledge
 
 * Probabilty Theory & Mathmatical Statistics
 * Linear Algebra
   * [Course Video: Linear Algebra - Professor Gilbert Strang - MIT](https://ocw.mit.edu/courses/mathematics/18-06-linear-algebra-spring-2010/video-lectures/)
 * Python Programming
 * SQL programming
+
+### Data Science Skills
+* Data Aquisition
+* Experiments
+
+### Introduction to Machine Learning
+* Gradient Descent
+* Linear regression
+* Tree based methods
+* Feature Importance
+
+### Advanced Machine Learning
+
+
+
+### Fundamental Deep Learning
+* Linear regression with Neural Network
+
+
+### Paper Reading
+* TIFUKNN
+
+
+
+
+
 
