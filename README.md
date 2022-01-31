@@ -33,6 +33,10 @@ This a collection of blogs about data science. Productization a machine learning
 ### Introduction to Machine Learning
 * Gradient Descent
 * Tree based methods
+  * Decision Tree
+  * Random Forest
+  * Gradient Boosting
+
 * Feature Importance
 
 ### Advanced Machine Learning
@@ -45,7 +49,6 @@ This a collection of blogs about data science. Productization a machine learning
 
 ### Paper Reading
 * TIFUKNN
-
 
 
 
