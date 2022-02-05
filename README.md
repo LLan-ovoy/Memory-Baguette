@@ -1,17 +1,19 @@
 
 # Yanan's Blogs - Memory Baguette
 
-Data science and Machine Learning practice is exciting, as long as the right knowledge can jump out immediately. But the truth is, our memory always sneak away  for various reasons. 
+Data science and Machine Learning practice are exciting, as long as the corresponding knowledge can jump out immediately. But the truth is, the memory always sneaks away. 
 
-I like the eposide of Memory Bread in Doraemon, such desperate.  
+When I was an undergraduate sophomore, I started using the avatar which I am using here.  It is from the episode of Memory Bread in Doraemon. 
 
 ![memory_bread](/image/memory_bread.jpg)
 
-This is my Memory Baguette. Doraemon's memory bread will lose efficacy after poopoo, while mine is not.
+Back in those days, I was hoping that I can learn as much as possible and keep them in my head, just like after eating memory bread. However, the memory faded at an incredible speed. 
+
+Now with a clear vision, I decided to write it down here and name it Memory Baguette. Doraemon's memory bread will lose efficacy after poopoo, while this time mine is not. XD
 
 ## Introduction
 
-This a collection of blogs about data science. Productization a machine learning model requires for a solid understanding of Statistic, Linear Algebra, and programming techniques, at least knowing them to some degree. 
+This is a collection of blogs about data science. Productization of a machine learning model requires a solid understanding of statistics, Linear Algebra, and programming techniques, at least knowing them to some degree. 
 
 
 

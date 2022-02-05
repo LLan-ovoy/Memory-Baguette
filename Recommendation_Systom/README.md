@@ -17,7 +17,7 @@
 
 #### Notation
 
-* Real rating 
+* Real rating
 
 $$
 \hat{y}_{ij} = u_i \cdot v_j
