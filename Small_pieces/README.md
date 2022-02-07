@@ -9,3 +9,7 @@ When to use MinMaxScalar and StandardScalar?
   * good for some linear models
   *  standard normal distribution E=0, std=1, making it easier to learn the weights
   * still keep outliers, less sensitive to outliers
+
+
+
+Unordered operation in Python: Set, no order, no index
