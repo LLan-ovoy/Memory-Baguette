@@ -4,10 +4,30 @@ This is the reading summary of [Deep Learning](https://www.amazon.com/Deep-Learn
 
 ### Introduction
 
-> Why deep learning? 
->
-> * To let computer system learn the complex real-world environment,  which actually is learned by human brain without efforts. Machine Learning is the only way to do this, while deep learning is one type of machine learning.
->
-> What is deep learning?
->
-> * A type of machine learning, a technique enables computer systes to improve with experience and data. It represents the world by nested hierarchy of concepts, which each concept deifined in relation to simpler concepts and more abstract representations computed in terms of less abstract ones.
+##### Why deep learning? 
+
+* To let computer system learn the complex real-world environment,  which actually is learned by human brain without efforts. Machine Learning is the only way to do this, while deep learning is one type of machine learning.
+
+##### What is deep learning?
+
+* A type of machine learning, a technique enables computer systes to improve with experience and data. It represents the world by nested hierarchy of concepts, which each concept deifined in relation to simpler concepts and more abstract representations computed in terms of less abstract ones.
+
+##### The history of deep learning
+
+* Cybernetic
+* Connectionism 
+* Neural Networks
+
+## Review of Linear Algebra
+
+> I will only listed some concepts here unless those I am not familiar with, denoted in *italic*.
+
+##### Mathematiclal objects
+
+* Scalars
+* Vectors
+* Matrices
+  * transpose $A^T_{i,j} = A_{j,i}$
+* Tensors
+  * *An array with more than two axes, i.e. variable number of axes.*
+
