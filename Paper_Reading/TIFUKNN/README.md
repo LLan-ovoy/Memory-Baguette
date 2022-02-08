@@ -15,18 +15,9 @@
 >   * use vector to represent each user, top 300 nearest neighbors
 >
 >   * ![1](image/1.png)
->   
->     ```markdown
->     <div style="display:none">
->     ```
->
 >     $$
 >     PIF_{vector} = \sum_{i=1}^{t}{v_i}
 >     $$
->   
->     ```markdown
->     </div>
->     ```
 >   
 >   * caculate 4 ratios
 >   
