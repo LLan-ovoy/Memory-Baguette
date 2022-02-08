@@ -2,7 +2,7 @@
 
 > Two patterns in PIF (personalized item frequency): 
 > $$
-> user_i'\ s \ record \ \ \{ v_1, v_2, ..., v_i, ..., v_t\}, \ where \ v_i = [0,1,1,1,1,0....]^T, \ predict \ v_{t+1}
+> user_i'\ s \ record \ \ \{ v_1, v_2, ..., v_i, ..., v_t\} \\\ where \ v_i = [0,1,1,1,1,0....]^T \\ aiming \ to \ predict \ v_{t+1}
 > $$
 >
 > * item frequency - repeated purchase pattern
@@ -14,17 +14,21 @@
 >
 >   * use vector to represent each user, top 300 nearest neighbors
 >
->   * $$
+>   * ![1](image/1.png)
+>   
+>      <! --
+>     $$
 >     PIF_{vector} = \sum_{i=1}^{t}{v_i}
 >     $$
->
+>     -->
+>   
 >   * caculate 4 ratios
->
+>   
 >     * captured by repeated: 0.1 - 0.6
 >     * Captured by collaborative - most, 0.5 - 0.98
 >     * captured by both: 0.1 - 0.6 around but smaller than repeated since intersection
 >     * Not captured by both: 0.01-0.4, most 0.1:  1- union of repeated and collaborative
->
+>   
 >   * RNNs has difficulty to learn vector addition
 
 #### code return
