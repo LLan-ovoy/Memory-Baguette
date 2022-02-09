@@ -3,6 +3,8 @@
 > What is recommender system?
 >
 > Application that provided to users personalized recommendations about content that they may be interested in.
+>
+> For some side topic, check [here](https://github.com/LLan-ovoy/Memory-Baguette/blob/main/Recommendation_System/SIDE_TOPICS.md).
 
 ### Two Types of recommendation Methods
 
@@ -14,7 +16,7 @@
 
   * similarities + former user behavior
 
-  * need extra data - feedbacks
+  * need extra data - [feedbacks](https://github.com/LLan-ovoy/Memory-Baguette/blob/main/Recommendation_System/SIDE_TOPICS.md#side-topic-1-user-feedback)
 
     > explicit feedback: ratings by users
     >
@@ -111,7 +113,7 @@
 
     * > find movies that Alice rated that are similar to 'Joker', predict average rating on these movies for Alice's possile rating on 'Joker
 
-  * measure: 
+  * [measure](https://github.com/LLan-ovoy/Memory-Baguette/blob/main/Recommendation_System/SIDE_TOPICS.md#side-topic-2-similarity-measurement)
 
     * Pearson correlation
     * Cosine similarity

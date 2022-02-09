@@ -36,7 +36,7 @@
 
       
 
-#### SIDE TOPIC 2: similarity measurement
+### SIDE TOPIC 2: similarity measurement
 
 > meansure of how similar, used in KNN
 
