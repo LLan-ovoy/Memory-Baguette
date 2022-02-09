@@ -4,7 +4,7 @@ mongod --dbpath=/Users/caoyanan/Desktop/USF/697_distributed_datasys/data/db
 mongoimport --db msds697 --file /Users/caoyanan/Desktop/USF/697_distributed_datasys/HW/HW2/business.json
 ```
 
-# Day-1 Contents
+# Part 1 NoSQL
 
 * Why NoSQL? 
   * review relational db - ACID
@@ -63,7 +63,7 @@ mongoimport --db msds697 --file /Users/caoyanan/Desktop/USF/697_distributed_data
 
 
 
-# Day-2 Contents
+# Part 2 CRUD
 
 * MongoDB 
 
@@ -178,7 +178,7 @@ mongoimport --db msds697 --file /Users/caoyanan/Desktop/USF/697_distributed_data
 
 ​			
 
-# Day-3 Contents
+# Part 3 Read/Find
 
 * Operation - Read
   * Cursor method
@@ -275,7 +275,7 @@ mongoimport --db msds697 --file /Users/caoyanan/Desktop/USF/697_distributed_data
   
           * Thus:
   
-            * only one array field
+            * only one array field
             * only single condition
             * only one positional $ 
   
@@ -291,24 +291,149 @@ mongoimport --db msds697 --file /Users/caoyanan/Desktop/USF/697_distributed_data
 
 
 
-# Day - 4
+# Part 4 Aggregation
 
-◦ **Aggregation Operations (aggregation pipeline)** ◦ Index
+* **Aggregation Operations (aggregation pipeline)**
 
-* aggreagte pipeline
+  * aggreagte pipeline
 
-  * 'in manhattan , calculate the avg score for each grade in grads'
-    * filter manhattan 
-    * project grades only
-    * unwind grades
-    * groupby 
-    * Average
+    * 'in manhattan , calculate the avg score for each grade in grades'
+      * filter manhattan 
+      * project grades only
+      * unwind grades: 1 doc with 3 record to 3 docs with 1 in each
+      * groupby 
+      * Average
 
-* ```sql
-  db.collecion_name.aggregate({transform_operator_1 : criteria_1}, {transform_operator_2 : criteria_2}, ...)
-  ```
+
+  * ```sql
+    db.collecion_name.aggregate({transform_operator_1 : criteria_1}, 
+                                {transform_operator_2 : criteria_2}, 
+                                ...)
+                                
+    db.area.aggregate({$match:{'city':Manhattan}},
+                      {$project:{'grades':1, '_id':0}},
+                     	{$unwind: '$grades'},
+                     	{$group:{'_id':'$grade', 
+                      				 'avg':{'$avg': 'score'}}}
+           					 )
+           					 				 
+    -- with $<field> dollar sign, it will point to the value in side this field 
+    -- so unwind each value inside grades and put then in each one a doc
+    ```
 
   * transform_operators performs operations including 
     * filtering, transformation, grouping, sorting 
-    * `$match, $project, $group, $unwind, $sort, $lookup etc.`
+      * `$match, $project, $group, $unwind, $sort, $lookup(outer join) etc.`
 
+  * match
+
+  * ```sql
+    { $match: { <query> } }
+    
+    db.world_bank_project.aggregate([{$match:{'mjtheme_namecode.name':"Human development"}}]}
+    ```
+
+  * project
+
+    * project output or add new fields
+
+    * ```sql
+      { $project : { <specification(s)> } }
+      -- specification:
+      -- {‘field' : ‘true'/'false'}
+      -- {‘new_field' : {$operator: expression}}
+      ```
+
+    * syntax can be different with what we learned in part 2
+
+    ```sql
+    $add -- add nums, dates
+    -- {$add: ["$<field1>", "$<field2>" ] }
+    $eq/gt/lt -- takes []***
+    -- { $gt: [ "$<field>", <value> ] }
+    $filter 
+    -- {$filter: { input:"$<array_field>" , as: "<new-varname>”, cond: <expression> } }
+    $size
+    --  {$size: "$<array_field>" }
+    $cond
+    --  {$cond: [<boolean-expression>, <true-case>, <false-case>]}
+    $concat
+    -- {$concat: ["$<field1>", "$<field2>", ... ] }
+    $dateDiff
+    --  { $dateDiff: { startDate: "$<field1>", endDate: "$<field2>", unit: "day"}
+    $convert
+    -- {$convert : {input : "$<field>”, to: "data_type”}}
+    
+    ```
+
+    * Example, $$ goes even further to next level
+
+    * ```sql
+      db.world_bank_project.aggregate(
+                   {$project:{'id':1, '_id':0,
+                              'human_development_project':
+                              {$filter:{input:'$mjtheme_namecode',
+                                        as: 'mjtheme_namecode_name', 
+                                        cond:{$eq:['$$mjtheme_namecode_name.name','Human development']}}
+        											}}},
+                    {$project:{'id':1, 'human_development_project':1, 
+                               'array_size':{$size:'$human_development_project'}}},
+                    {$match:{'array_size': {$gt:0}}},
+                    {$project:{'array_size':0}}
+                    )
+      ```
+
+  * Group
+
+    * ```sql
+      {$group: {_id: “$<field>”,
+      <new_field_name>: {<accumulator1> : <expression1> }, ... } }
+      -- Accumulator:
+      -- $sum, $avg, $min, $max, $first, $last
+      
+      db.world_bank_project.aggregate([{$group:{'_id': '$countrycode', 'count': {$sum:1}}}])                            
+      ```
+
+
+  * unwind
+
+    * ```sql
+      {$unwind: '$<field_path>'}
+      
+      
+      db.world_bank_project.aggregate([{$unwind: '$theme_namecode'}, 
+                                       {$group:{'_id':'$theme_namecode',' 
+                                       					'count':{$sum:1}}}])
+      ```
+
+  * Sort
+
+    * ```sql
+      {$sort: {<field1>: <sort order>, <field2>: <sort order> ... } }
+      -- sort order : 1 (ascending), -1 (descending)
+      
+      db.world_bank_project.aggregate([{$project:{'borrower':1,'id':1,'_id':0,
+                                     							'approvalfy_num':{$convert:{input:'$approvalfy', 
+        																																	    to:'double'}}}},
+                          						 {$sort:{'approvalfy_num':-1}}])
+      ```
+
+  * lookup
+
+    * ```sql
+      db.<collection_1>.aggregate({$lookup:{localField: “<field_1>”, 
+                                            from: “<collection_2>”,
+                                            foreignField: “<field_2>”,
+                                            as: “<output_field>”}} )
+                                            
+      
+      db.world_bank_project.aggregate([{$match:{'countrycode':'CN'}},
+                                       {$lookup:{localField:'countrycode',
+                                                 from:'country_code',
+                                                 foreignField:'code',
+                                                 as:'country_phone_info'}}])                                                          
+      ```
+
+* Index
+
+  * 

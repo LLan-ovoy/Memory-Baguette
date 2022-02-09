@@ -68,8 +68,52 @@ $$
 A_{1,1}x_1 + A_{1,2}x_2 + ... + A_{1,n}x_n = b1
 $$
 
-#### Indentity and Inverse Matrices
+### Indentity and Inverse Matrices
 
 * Identity matrices $\mathit{I}_n \in \mathbb{R}^{n\times n}$ , then $\forall x\in \mathbb{R}^n, \mathit{I}_nx = x$
 
-* matries inverse of $A$ is $A^{-1}$, and $ A A^{-1} = \mathit{I}_n$
+* matries inverse of $A$ is $A^{-1}$, and $A^{-1} A  = \mathit{I}_n$.                                                                                                              
+
+So we can solve the linear system by
+$$
+Ax = b \\
+A^{-1}Ax = A^{-1}b \\
+I_n x = A^{-1}b \\
+x = A^{-1}b
+$$
+This process depends on it being possible to find $A^{-1}$.
+
+*However, a digital computer can only find the closed form of $A^{-1}$ with limited precision, and this is the reason why this solution of such linear system is more of a theoretical tool while not actually be used in practice.*
+
+*Algorithms that make use of the value of b can usually obtain more accurate estimates of $x$*.
+
+### Linear dependent and Span
+
+* *For $A^{-1}$ to exist, $Ax = b$ must has exactly one solution for every value of $b$.* 
+
+It is possibly that $Ax = b$ have no solution or infinite solutions but impossible to have more than one but less than infinite solutions for a particular $b$, because if both $x$ and $y$ are solutions of this quation, then $z$ in the following equation should also be the solution of $Ax = b$ .
+$$
+z = \alpha x + (1-\alpha)y
+$$
+To Analyze how many solutions it has, *think of columns of A as specifying different directions we can trvel in from the origin $[0,0,...,0]^T$ to $b$.* So each element of $x$ specifying how far to move in each direction of column $i$, and this is a linear combination:
+$$
+Ax = \sum_i x_i A_{:,i}
+$$
+*This is also a span of a set of vectors, which is just columns of matrix $A$.* It is the set of all points obtainable by linear combination of the original vectors.
+
+* If $b$ in the span of the columns of $A$, the linear system $Ax = b$ must have at least one solution.
+  * This span is the column space of $A$, also called range of $A$
+* In order for  $Ax = b$ has solution for any $b \in \mathbb{R}^m$, the column space of $A$ should be the whole $\mathbb{R}^m$
+* Thus, $A$ must have $n\ge m$ independent columns, for at least one solution of $Ax = b$, not exatly one. 
+
+Example, consider a $3\times2$ matrix $A$ with a $b\in \mathbb{R}^3$, since the column space of $A$ is 2-D while $b$ is 3-D, only when $b$ lies on that plane, $Ax = b$ has a solution. In this case, it is not for every $b \in \mathbb{R}^3$.
+
+* Here we say independent columns number, not just the number of columns, since there may be some 'redundant' columns.
+* The necessay and suffficient for solve $Ax = b$ is a set with exactly $m$ linear independent columns, not at least $m$. 
+  * A set of m-D vectors cannot have more tham m independent columns.
+  * If there is more than $m$ independent vectors, there will be infinite solution for $Ax = b$.
+* Thus, the matrix mush be square. *If a squre matrix has dependent columns, it is called singular.*
+  * If a matrix is not square, or square but singular, then it is invertible
+  * If a matrix is invertible then it is non-singular.
+
+* $A A^{-1} = \mathit{I}_n$.  This is called right inverse. For square matrix, left inverse and right inveres are the same.           

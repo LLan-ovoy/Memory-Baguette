@@ -46,7 +46,7 @@
       * user based
       * item based
       * measure: correlation/distance
-    * model based methods
+    * model based methods - Matrix Factorization
 
 
 
@@ -309,14 +309,87 @@
 
     * Can we change the first model to predict numbers in a particular range? Hint: sigmoid would create numbers between 0 and 1. Would this improve the model? `4*sigmoid(x)+1 => [1,5]` **since it the rating thing**=> working on the loss and then changes everything
     * Would a different Loss function improve results? What about absolute value instead of F.mse_loss? `l1_loss`
+      
 
+# Part 5 Adaboost
 
+* Kaggle competition
+  * don;t use leaderboard too much may overfit
+  * figure out own way to explain the problem
+    * all positive, then do negative sampling
+    * sea... 
+  * random forest - new data, 
+    * user & item vectors as some features  to random forest and see 
+    * use item vectors to do random forest and see whether it works well with item_features
+  * classification
+  * put in some constant to check whether the data is balanced
+  * it can be multiple model combined together
+    * first whether gonna read or not
+    * then predict the ratings
+    * museum, movie, books, music, 
 
+* Review of decision trees
 
+  * bushy: Overfitting, high variance
 
+  * shallow: underfitting, hight bias
 
+  * Measure of impurity
 
+  * Tree notation:
+    $$
+    T(x;\theta) = \sum_{j=1}^{J}\beta_j \mathbb{1}_{[x \in R_j]}\\
+    T(x; \theta) = \frac{1}{\# items}
+    $$
 
+* Boosting question
+
+  * Binary stump trees example, a
+    $$
+    T(x) = \mathbb{1}_{[x\in \{wind=false\}]} - \mathbb{1}_{[x\in \{wind=true\}]}
+    $$
+
+    * error rate is the overall error rate of the stump tree
+
+  * weak classifiers
+
+    * pros: fast, no-overfit
+    * Cons: underfit, low accuracy
+    * *how to make it better: more features, ensamble, boosting*
+
+* Ensemble models
+
+  * where $\alpha's$ are weights based on error rate from each binary stump, misclassified data has larger weight so it well be 'taken care' well in next tree
+
+  $$
+  G(x) = sign(\alpha_1G_1(x) + \alpha_2G_2(x)  + \alpha_3G_3(x) +...)
+  $$
+
+  * *difference between RandomForest and Adamboost?*
+    * *Initially a large bias, but Adaboost has a way to change bias over time.*
+    * *no way to decrease bias, all trees are deep*
+
+* Weighted decision stumps 
+  $$
+  \theta^* = argmin_{\theta} \frac{\sum_{i=1}^N w_i \mathbb{1}_{[y^{(i)}\ne T(x^{(i)};\theta]}}{\sum_{i=1}^{N}w_i}\\
+  
+  w_i = w_i \cdot exp[\alpha_m \cdot \mathbb{1}_{[y^{(i)}\ne T(x^{(i)}]}]\\ 
+  \text{where }\alpha_m = log(\frac{1-err_m}{err_m}) \text{, lower error, higher weight}
+  $$
+
+  * *the weights are only used for classification error in training* 
+
+    * *round1: pick the lowerest error tree and update the mis-classified item rate, if the err is $< 0.5$, then $w_i$ will increase and we will never get an error rate $>0.5$,*
+      $$
+      w_i = w_i \times log(\frac{1-err}{err})
+      $$
+
+    * *round 2: pick the lowest error rate tree and update $w_i$ again*
+    * final vote with all trees, thought each based on former
+
+  * strategy is to just misclassify those has lower weights and make right those larger weight
+
+* Lab: start working on the Kaggle competition
 
 
 
