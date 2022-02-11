@@ -151,21 +151,52 @@
   > \frac{1}{N} \sum_{(i,j): r_{ij}=1} (y_{ij}-u_iv_j)^2
   > $$
 
+* Gradient descent of MF
+
+  > $$
+  > Loss = E(U,V) = \frac{1}{N}\sum_{(i,j):r_{i,j}=1} (y_{ij}-u_iv_j)^2 \\
+  > 
+  > \frac{\partial L}{\partial u_{ik}} = -\frac{2}{N} \sum_{j:r_{i,j}=1} (y_{ij}-u_iv_j) v_{jk} \\
+  > 
+  > \frac{\partial L}{\partial v_{jk}} = -\frac{2}{N} \sum_{i:r_{i,j}=1} (y_{ij}-u_iv_j) u_{ik} \\
+  > 
+  > u_{ik} \leftarrow u_{ik} + \frac{2\eta}{N} \sum_{j:r_{i,j}=1} (y_{ij}-u_iv_j) v_{jk} \\
+  > 
+  > v_{jk} \leftarrow v_{jk} + \frac{2\eta}{N} \sum_{i:r_{i,j}=1} (y_{ij}-u_iv_j) u_{ik}
+  > $$
+  >
+  > Vectorized
+  > $$
+  > \Delta = (Y - U\cdot V^T)\\
+  > 
+  > \frac{\partial E}{\partial U} = -\frac{2}{N} \Delta \cdot V\\
+  > 
+  > \frac{\partial E}{\partial V} = -\frac{2}{N} \Delta^T \cdot U
+  > $$
+  > 
+
 * Gradient descent with momentum
 
   > $$
   > w \leftarrow random \ inital \\
   > v \leftarrow 0 \\
-  > β= 0.9 \\ 
-  > \text{for i = 1: max-iter do} \\
-  > v \leftarrow \beta v+(1-\beta) \triangledown E(w) \\
-  > w \leftarrow w - \eta v\\
-  > \text{end}
+  > β= 0.9 \\
+  > \\
+  > 
+  > v_t \leftarrow \beta v_{t-1} + (1-\beta) \triangledown E(w_t) \\
+  > w_{t+1} \leftarrow w_t - \eta v_t\\
   > $$
-  >
   > 
 
+  
+
 * Regularization, avoid overfitting, how to pick lambda
+
+  > $$
+  > \frac{1}{N}\sum_{(i,j):r_{ij}=1}(y_{ij}-u_iv_j)^2 + \lambda(\sum_{i=1}^{n_u}\sum_{k=1}^{K} u_{ik}^2 + \sum_{i=1}^{n_m}\sum_{k=1}^{K} v_{ik}^2)\\
+  > 
+  > \text{where,} N =\sum_{ij}r_{ij}
+  > $$
 
 #### SIDE TOPIC: Feedback
 
@@ -185,7 +216,7 @@
 
     - Cons:
 
-      - No nagative feedback, positive-only data
+      - No nagative feedback, positive-only data: only know user listen to which song, but don't know which song user hate
 
         - > Missing as negative: fill empty with zeros 
           >
@@ -279,8 +310,8 @@
     > * measure similarity between two sets
     >
     > * binary features, will lose information if used in non-binary features
-    >   * <span style="color:#D0505D">*how to take binary features to sets?*</span>
-    >   * <span style = 'color:#d0505d'>*how to go from x,y to A,B?*</span>
+    >   * <span style="color:#D0505D">*how to take binary features to sets?*</span> *=> general cases*
+    >   * <span style = 'color:#d0505d'>*how to go from x,y to A,B?*</span> 
     > * model lack of ratings, since it only count numbers
 
 - Cosine similarity
@@ -376,99 +407,269 @@
 
 
 
-# day 4
+# Part 4 Pytorch
 
-* general pytorch
+### general pytorch
 
-  * Steps:
+* **transfer data to tensor**
 
-  * tensor(x.values)
-
-    * unsqueese(1)
-
-  * Detach()
-
-    * Model(x.float())
-
-  * Data loader:
-
-  * generate data:
-
-    * Class RegressionDataset()
-
-  * Data loader
-
-    ```python
-    from torch.utils.data import Dataset, DataLoader
-    train_dl = DataLoader(fake_train_ds, batch_size=1000, shuffle=True)
-    valid_dl = DataLoader(fake_valid_ds, batch_size=1000, shuffle=False)
+  * ```python
+    x = torch.tensor([[1,2],[3,4]])
+    x.shape #2,2
     
-    x, y = next(iter(train_dl)) # next batch
+    x = torch.randn(5,10).type(torch.FloatTensor)
+    x.shape #5,10
+    x.view(1,-1).shape # 1,50
     ```
 
-  * Batching data
+  * unsqueese(1)
 
-    * Why? data is bigger than memory; gradient noise since small set not whole
+    ```
+    x.unsqueeze(2)
+    x.shape #5,10,1
+    ```
 
-  * Shuffling data: so won't all 1 or 0
+* **autograd flag**
 
-  * Load the data in parallel using multiprocessing workers.
+  * ```python
+    # a signal telling pytorch it is going to do gradient descent on this variable
+    x = torch.tensor([1,2,3,4,5,6], requires_grad=True)
+    x = torch.tensor([1,2,3,4,5,6]).requires_grad_()
+    ```
 
-  * loss
+  * How it works
 
     ```python
-    from sklearn.metrics import r2_score
-    
-    def val_metric(model, valid_dl):
-        model.eval()
-        losses = []
-        y_hats = []
-        ys = []
-        for x, y in valid_dl:
-            y = y.unsqueeze(1)
-            y_hat = model(x.float()) #x.float()
-            loss = F.mse_loss(y_hat, y.float())
-            y_hats.append(y_hat.detach().numpy	()) # y.detach().numpy()
-            ys.append(y.numpy()) 
-            losses.append(loss.item()) # .item()
+    L = (2*x**2 + 1).mean()
+    L.backward()
+    x.grad #tensor([0.6667, 1.3333, 2.0000, 2.6667, 3.3333, 4.0000]
+    ```
+
+  * How to remove it? This is useful at validation time
+
+    ```python
+    torch.no_grad()
+    # Prevent the gradients from being calculated in a piece of code. This is useful at validation time
+    ```
+
+* **Detach to numpy**
+
+  ```python
+  x.detach().numpy()
+  ```
+
+### Create Model
+
+`nn.Linear(5, 3)` creates a linear transformation with parameters $A$ and $b$ ($A\cdot X+b$). Given an input matrix of observations $X$ ($N \times 5$), `nn.Linear(5, 3)` transforms X into a $N \times 3$ matrix, where $N$ can be anything (number of observations).
+
+```python
+def lin(a,x,b): return a*x+b
+
+def gen_fake_data(n,a,b):
+  x = np.random.uniform(0,1,n)
+  y = lin(a,x,b) + 0.1* np.random.normal(0,3,n)
+  return x,y
+
+x,y = gen_fake_data(50,3,8)
+
+def mse(y_hat, y):
+  return np.mean((y-y_hat)**2)
+
+def mse_loss(a, b, x, y): 
+  return mse(lin(a,b,x), y)
+```
+
+* **Model in pytorch**
+
+  ```python
+  model = torch.nn.Sequential(
+  	nn.Linear(1,1)
+  )
+  model
+  ```
+
+  * write it in a class
+
+  ```python
+  class LinearRegression(nn.Module):
+  		def __init__(self):
+      		super(LinearRegression, self).__init__()
+          self.lin = nn.Linear(1,1)
+          
+      def forward(self, x): ## create a model by calling LinearRegression()   
+        	x = self.lin(x)
+          return x
         
-        ys = np.concatenate(ys) # extend
-        y_hats = np.concatenate(y_hats)
-        return np.mean(losses), r2_score(ys, y_hats)
+  model = LinearRegression()  
+  model(x.float())
+  ```
+
+  * data dimension opeartion
+
+  ```python
+  x, y = gen_fake_data(10000, 3., 8.)
+  x = torch.tensor(x).float()
+  y = torch.tensor(y).float()
+  x.shape #10000
+  
+  x_2 = torch.unsqueeze(x, 1)
+  x_2.shape # 10000,1
+  
+  x_3 = torch.squeeze(x, 1)
+  x_3.shape # 10000
+  ```
+
+* **Optimizer**
+
+  * ```python
+    learning_rate = 0.1
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    ```
+
+### A general process
+
+* elements:
+
+  * ```model.train()```
+  * Calculate `y_hat = model(x)`
+  * specify `loss = F.mse_loss(y_hat, y)`
+  * `optimizer.zero_grad()`
+  * `loss.backward()`
+  * `optimizer.step()`
+  * `model.eval()`, this is for validation
+
+  ```python
+  for t in range(1000):
+    	model.train() 							# turn on training mode
+      y_hat = model(x.float()) 						# apply model on x to compute y_hat
+      loss = F.mse_loss(y_hat, y) # calculate loss
+      # loss = F.binary_cross_entropy_with_logits(y_hat, y)
       
-    # be carefull when log loss = 0.69
-    ```
+      optimizer.zero_grad()				# set optimizer's variables's grad to be 0
+      loss.backward()							# compute gradient
+      # Computes the gradient of loss with respect to all Variables with requires_grad=True.
+      # After this call a.grad and b.grad will be Variables holding the gradient
+      # of the loss with respect to a and b respectively
+      
+      optimizer.step()						# update optimizer's parameters
+      
+      model.eval()								# turn on evaluate mode
+      y_hat_val = model(x_val)
+      val_loss = F.mse_loss(y_hat_val, y_val)
+      # val_loss = F.binary_cross_entropy(torch.sigmoid(y_hat_val), y_val)
+      print(loss.item(), val_loss.item())
+  ```
 
-  * train
+### Integrate Data
 
-    ```python
-    ## train_loop function
-    def train_loop(model, train_dl, valid_dl, optimizer, epochs):
-        for i in range(epochs):
-          	losses = []
-            model.train() # be careful where the model.train() is
-            for x, y in train_dl:
-                y = y.unsqueeze(1)
-                y_hat = model(x.float())
-                loss = F.mse_loss(y_hat, y.float())
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                losses.append(loss.item())
-            
-            train_loss = np.mean(losses)
-            valid_loss, valid_auc = val_metric(model, valid_dl)
-            print("train loss %.3f valid loss %.3f auc roc %.3f" % (train_loss, valid_loss, valid_auc))
-    ```
+```python
+from torch.utils.data import Dataset, DataLoader
+```
 
-    * for each batches, the surface of bowl changes and the minimum is not a single point, it changes in each batch but in this case is more generalizable
-    * Oscillating around the bottom
+* generate dataset
+
+  ```python
+  def lin(a,b,x): return a*x+b
+  
+  def gen_fake_data(n, a, b):
+      x = np.random.uniform(0,1,n) 
+      y = lin(a,b,x) + 0.1 * np.random.normal(0,3,n)
+      return x.astype(np.float32), y.astype(np.float32)
+  
+  # create a dataset
+  class RegressionDataset(Dataset):
+      def __init__(self, a=3, b=8, n=10000):
+          x, y = gen_fake_data(n, a, b)
+          x = torch.from_numpy(x).unsqueeze(1)
+          y = torch.from_numpy(y)
+          self.x, self.y = x, y
+      
+      def __len__(self):
+          return len(self.y)
+      
+      def __getitem__(self, idx):
+          return self.x[idx], self.y[idx]
+      
+  fake_train_ds = RegressionDataset()
+  fake_valid_ds = RegressionDataset()
+  ```
+
+* Data loader
+
+  ```python
+  train_dl = DataLoader(fake_train_ds, batch_size=1000, shuffle=True)
+  valid_dl = DataLoader(fake_valid_ds, batch_size=1000, shuffle=False)
+  
+  x, y = next(iter(train_dl)) # next batch
+  ```
+
+  * what is data loader used for?
+    * Batching data
+      * Why? data is bigger than memory; gradient noise since small set not whole
+      * for each batches, the surface of bowl changes and the minimum is not a single point, it changes in each batch but in this case is more generalizable
+    * Shuffling data: so won't all 1 or 0
+      * no need to shuffle validation data since it is not used for training
+    * Load the data in parallel using multiprocessing workers.
+
+* loss
+
+  ```python
+  from sklearn.metrics import r2_score
+  
+  def val_metric(model, valid_dl):
+      model.eval()
+      losses = []
+      y_hats = []
+      ys = []
+      for x, y in valid_dl:
+          y = y.unsqueeze(1)
+          y_hat = model(x.float()) #x.float()
+          loss = F.mse_loss(y_hat, y.float())
+          y_hats.append(y_hat.detach().numpy	()) # y.detach().numpy()
+          ys.append(y.numpy()) 
+          losses.append(loss.item()) # .item()
+      
+      ys = np.concatenate(ys) # extend
+      y_hats = np.concatenate(y_hats)
+      return np.mean(losses), r2_score(ys, y_hats)
+    
+  # be carefull when log loss = 0.69
+  ```
+
+* train
+
+  ```python
+  ## train_loop function
+  def train_loop(model, train_dl, valid_dl, optimizer, epochs):
+      for i in range(epochs):
+        	losses = []
+          model.train() # be careful where the model.train() is
+          for x, y in train_dl:
+              y = y.unsqueeze(1)
+              y_hat = model(x.float())
+              loss = F.mse_loss(y_hat, y.float())
+              optimizer.zero_grad()
+              loss.backward()
+              optimizer.step()
+              losses.append(loss.item())
+          
+          train_loss = np.mean(losses)
+          valid_loss, valid_auc = val_metric(model, valid_dl)
+          print("train loss %.3f valid loss %.3f auc roc %.3f" % (train_loss, valid_loss, valid_auc))
+  ```
+
 
 * Matrix factorization with PyTorch
 
-  * Encoding data
+  * Encoding data: remove validation data which not in training data
 
-    * 
+    ```python
+    userid2idx = {o:i for i,o in enumerate(train_user_ids)}
+    
+    train["userId"] = train["userId"].apply(lambda x: userid2idx[x])
+    val["userId"] = val["userId"].apply(lambda x: userid2idx.get(x, -1)) 
+    # -1 for users not in training
+    ```
 
   * Embedding layer
 
@@ -504,8 +705,6 @@
            	 	# sum(1), 1 is the axis = 1
       ```
 
-  * Debugging MF model
-
   * Training MF model
 
     ```python
@@ -529,7 +728,17 @@
             print("train loss %.3f valid loss %.3f" % (loss.item(), testloss)) 
     ```
 
-    
+    ```python
+    def valid_loss(model):
+        model.eval()
+        users = torch.LongTensor(val.userId.values) 
+        items = torch.LongTensor(val.movieId.values) 
+        ratings = torch.FloatTensor(val.rating.values) 
+        y_hat = model(users, items)
+        loss = F.mse_loss(y_hat, ratings)
+        abs_loss = F.L1_loss(y_hat, ratings)
+        return loss.item(), abs_loss.item()
+    ```
 
   * MF with bias
 
@@ -559,25 +768,38 @@
 
     * Can we change the first model to predict numbers in a particular range? Hint: sigmoid would create numbers between 0 and 1. Would this improve the model? `4*sigmoid(x)+1 => [1,5]` **since it the rating thing**=> working on the loss and then changes everything
     * Would a different Loss function improve results? What about absolute value instead of F.mse_loss? `l1_loss`
-      
+
+
+
+
+
+
+
+
+
+
 
 # Part 5 Adaboost
 
-* Kaggle competition
-  * don;t use leaderboard too much may overfit
-  * figure out own way to explain the problem
-    * all positive, then do negative sampling
-    * sea... 
-  * random forest - new data, 
-    * user & item vectors as some features  to random forest and see 
-    * use item vectors to do random forest and see whether it works well with item_features
-  * classification
-  * put in some constant to check whether the data is balanced
-  * it can be multiple model combined together
-    * first whether gonna read or not
-    * then predict the ratings
-    * museum, movie, books, music, 
-
+* **Kaggle competition**
+  
+  * **don;t use leaderboard too much may overfit**
+  * **figure out own way to explain the problem**
+    * **all positive, then do negative sampling**
+    * **sea...** 
+  * **random forest - new data,** 
+    * **user & item vectors as some features  to random forest and see** 
+    * **use item vectors to do random forest and see whether it works well with item_features**
+  * **classification**
+  * **put in some constant to check whether the data is balanced**
+  * **it can be multiple model combined together**
+    * **first whether gonna read or not**
+    * **then predict the ratings**
+    * **museum, movie, books, music,** 
+  * **get a mean user**
+    * **do average on embeddings**
+    * **compute a mean user by randomly asign labels to a user, like create a new user as u_n+1**
+  
 * Review of decision trees
 
   * bushy: Overfitting, high variance
@@ -643,7 +865,93 @@
 
 
 
+# Part 6 Gradient Boosting
 
+- review of Adaboost
 
+  - stump tree with only one feature,  pick the lowest error rate
+  - Weight observations of misclassified with this error rate log(/)
+  - Redo pick loest error rate with weight
+  - in random forest, tree are same, sometime forget a feature
 
+- additive modelingintuition
 
+  - in adaboost, average classifiers
+
+  $$
+  F(x) = sign(f(x)) = sign(\sum_{m=1}^{M}\alpha_m T_m(x))
+  $$
+
+  * each feature was take cared by a function, still a sum, kind of same as adaboost, but adaboost can use same features for several times
+
+  $$
+  \hat{y} = b+g_1(x_1)+g_2(x_2)...
+  $$
+
+  - Intuition: decomposing a simple terms, it may not be good
+
+- gradient boosting
+
+  - $$
+    \hat{y} = \bar{y} + T_1(x) + T_2(x) + ...
+    $$
+
+  - *random forest, always fit on the same data, worry about overfit, gradient boosting use different?*
+
+- Gradient boosting for Regression with MSE
+
+  - steps:
+
+    ![gradientboost](image/msegb.png)
+
+    - Round1
+      - take **mean** of y: minimize the MSE
+    - Round 2
+      - find best split, x = x, y = SE = (y_real - y_pred1)
+        - compute the MSE the two side of a split
+      - random split x, and  predcit 
+
+- Gradient boosting for Regression with MAE
+
+  ![msebg](image/maegb.png)
+
+  - Round1
+
+    - take **median** of y: minimize the MSE
+
+  - Round 2
+
+    - find best split of x = x, **y = sign(SE), this is a classification**:
+      - compute the MSE the two side of a split
+
+    - random split x, and  predcit 
+
+- What all these algorithms have in common?
+
+- Gradient boosting
+
+  - Regularization for boosting: learning rate
+    $$
+    f_m(x) = f_{m-1}(x) + vT(x;\theta_m)
+    $$
+
+* algorithm
+  $$
+  f_0(x) = argmin_\beta \sum \\
+  
+  r_i = -[\frac{\partial L(y,f)}{\partial f}]\\
+  
+  \begin{align*}
+  r_i &= -\frac{\partial L}{\partial f}|_{f=f_{m-1}(x^{(i)}), y = y^{(i)}} \\
+  & = y^{(i)}-f_{m-1}(x^{(i)})\\
+  \end{align*}
+  $$
+
+  $$
+  \begin{align*}
+  \beta &= argmin_{\beta} \sum_{x^{(i)} \in R} L(y^{(i)}, f_{m-1}(x^{(i)}+\beta))\\
+  &= \sum_{}
+  \end{align*}
+  $$
+
+  

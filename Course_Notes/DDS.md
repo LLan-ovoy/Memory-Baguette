@@ -3,7 +3,7 @@ mongod --dbpath=/Users/caoyanan/Desktop/USF/697_distributed_datasys/data/db
 
 mongoimport --db msds697 --file /Users/caoyanan/Desktop/USF/697_distributed_datasys/HW/HW2/business.json
 
-mongoimport --db msds697 --file /Users/caoyanan/Desktop/USF/697_distributed_datasys/msds697_distributed_data_systems_2022/Data/world_bank_project.json
+mongoimport --db msds697 --file /Users/caoyanan/Downloads/usf_locations.js
 ```
 
 # Part 1 NoSQL
@@ -622,4 +622,69 @@ db..find(
 
 * Index
 
-  * 
+  * which field you want to use, interested in for retrieving
+  
+  * B-tree: binary based on range
+  
+  * hash into buckets
+  
+  * ```sql
+    db.business.createIndex({'field':'hash'})
+    db.business.getIndexs()
+    db.business.dropIndex({'field': direction})
+    ```
+
+
+
+# Part 5
+
+* distributeds models
+  * Aggregate
+  * two ways for data distributed
+    * sharding
+    * Replication
+  * sharding: Improves scalability
+    * distirbuted data to diff server, each has own read and write
+    * consider: Locate the data commonly accessed together on the same node
+    * Pro/cons
+      * Pros : Improves read and writes.
+      * Cons : Low resilience, if one small-db dies, all lose
+    * mongoDB auto-sharing: shard, balance, access
+  * Replication: redundancy but increase acailability
+    * Provides fault tolerance against the loss of a single database server
+    * type:
+      * Primary-secondary replication
+      * if secondary dead, then route to the primary. But **write** action **only** to the primary replication, and primary Synchronize to secondary, some **time-delay** may lead to **inconsistance**.
+      * Primary
+        - Authoritative source for the data.
+        - Responsible for processing updates.
+        - if primary dead, will automated choose ganother secondary as primary
+      * Secondaries
+        - Contains copied data from a master.
+      * Peer-to-peer replication
+* sharding + replications = **Scalability + Fault Tolerance**
+  *  Primary-Secondary replication and sharding
+    * Multiple nodes.
+    * Each data only has one master.
+    * A node can be a master for some data and slave for others.
+* CAP Theorem
+* 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
