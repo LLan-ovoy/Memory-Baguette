@@ -206,7 +206,7 @@
 
     - User are unwilling to provide responses
 
-    - > Implicit feedback:  biased by only from people who willing to provide ratings
+    - > explicit feedback:  biased by only from people who willing to provide ratings
 
   - implicit: infer user preference
 
@@ -414,7 +414,7 @@
 * **transfer data to tensor**
 
   * ```python
-    x = torch.tensor([[1,2],[3,4]])
+    x = torch.tensor([[1.,2.],[3.,4.]])
     x.shape #2,2
     
     x = torch.randn(5,10).type(torch.FloatTensor)
@@ -433,8 +433,8 @@
 
   * ```python
     # a signal telling pytorch it is going to do gradient descent on this variable
-    x = torch.tensor([1,2,3,4,5,6], requires_grad=True)
-    x = torch.tensor([1,2,3,4,5,6]).requires_grad_()
+    x = torch.tensor([1.,2.,3.,4.,5.,6.], requires_grad=True)
+    x = torch.tensor([1.,2.,3.,4.,5.,6.]).requires_grad_()
     ```
 
   * How it works
@@ -715,11 +715,16 @@ from torch.utils.data import Dataset, DataLoader
         # in the gradient it is (dL/du + 2·lambda·u)
         for i in range(epochs):
             model.train()
+            
+            # get user index and item index
             users = torch.LongTensor(train.userId.values)  #.cuda()
             items = torch.LongTensor(train.movieId.values) #.cuda()
+            
             ratings = torch.FloatTensor(train.rating.values)  #.cuda()
-        
+        		
+            # put index into model and get embedding
             y_hat = model(users, items)
+            
             loss = F.mse_loss(y_hat, ratings)
             optimizer.zero_grad()
             loss.backward()
@@ -727,7 +732,7 @@ from torch.utils.data import Dataset, DataLoader
             testloss = valid_loss(model)
             print("train loss %.3f valid loss %.3f" % (loss.item(), testloss)) 
     ```
-
+  
     ```python
     def valid_loss(model):
         model.eval()
@@ -739,9 +744,9 @@ from torch.utils.data import Dataset, DataLoader
         abs_loss = F.L1_loss(y_hat, ratings)
         return loss.item(), abs_loss.item()
     ```
-
+  
   * MF with bias
-
+  
     ```python
     class MF_bias(nn.Module):
         def __init__(self, num_users, num_items, emb_size=100):
@@ -763,9 +768,9 @@ from torch.utils.data import Dataset, DataLoader
             b_v = self.item_bias(v).squeeze()
             return (U*V).sum(1) +  b_u  + b_v
     ```
-
+  
   * Lab
-
+  
     * Can we change the first model to predict numbers in a particular range? Hint: sigmoid would create numbers between 0 and 1. Would this improve the model? `4*sigmoid(x)+1 => [1,5]` **since it the rating thing**=> working on the loss and then changes everything
     * Would a different Loss function improve results? What about absolute value instead of F.mse_loss? `l1_loss`
 
@@ -954,4 +959,28 @@ from torch.utils.data import Dataset, DataLoader
   \end{align*}
   $$
 
+
+
+
+
+
+
+
+# Day-8
+
+* compute: 2-layer nerual network
+
+  ```
+  model = nn.sequential(
+            nn.Linear(k,50)
+            nn.ReLU(),
+            nn.Linear(50,1) 
+          )
+  ```
   
+
+* Gradient boost works better with tabular data
+* Neural Networks: 
+  * user id, item id, data, learn representation
+  * image, video, text
+  * concatenate embedding, put into ReLU, embedding user, item, item_feature, user_content

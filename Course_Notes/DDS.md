@@ -662,25 +662,229 @@ db..find(
       * Secondaries
         - Contains copied data from a master.
       * Peer-to-peer replication
+  
 * sharding + replications = **Scalability + Fault Tolerance**
   *  Primary-Secondary replication and sharding
     * Multiple nodes.
     * Each data only has one master.
     * A node can be a master for some data and slave for others.
-* CAP Theorem
-* 
+  
+* CAP Theorem => only get two
+
+  * Consistancy
+    * all nodes on-dated
+    * when updating, cannot write (sacrifies availability)
+
+  * Availability
+    * Non-failing node must response
+
+  * Partition Tolerance - communication
+    * survive from **communication** breakages
+
+
+  * MongoDB: mainly Consistancy and partition Tolerance, but can configure
 
 
 
 
 
+# Part 6
 
+* Spark SQL
 
+  * DataFrame
 
+    * Keywords:
+      * Handle structured, distributed data 
+      * a table-like representation
+      * named column declared with column types.
+    * can query DataFrame register from different source
 
+  * Creating DataFrames 
 
+    * load data as text, parse the lines, and identify elements for processing
 
+    * ```sql
+      -- initiate rdd
+      from pyspark import SparkContext
+      sc = SparkContext.getOrCreate()
+      
+      -- initiate SparkSession
+      from pyspark.sql import SparkSession
+      ss = SparkSession.builder.getOrCreate()
+      
+      -- we need both
+      ```
 
+    * create DataFrames from RDD.toDF()
+
+      ```sql
+      -- RDD to DataFrame 
+      RDD.toDF(['id','name','class_id']) -- cannot specify the data type
+      
+      -- DataFrame to RDD
+      DataFrame.rdd
+      ```
+
+      * Limitation
+
+        * All the columns are string type.
+        * All the columns are nullable.
+
+      * ```sql
+        -- check the schema using 
+        DF.printSchema()
+        -- see the data frame using 
+        DF.show(num_rows)
+        ```
+
+    * create DataFrames from sc.createDataFrame()
+
+      ```sql
+      from pyspark.sql.types import *
+      -- DataType: NullType(), StringType(), BinaryType(), BooleanType(), DateType(),TimstampType(),DoubleType(), FloatType(), IntegerType(), ArrayType() etc.
+      
+      schema = StructType([StructField("name", StringType(), nullable=True), StructField("age", IntegerType(), True)])
+      sc.createDataFrame(data, schema=schema, samplingRatio=None, verifySchema=True)
+      	-- data: RDD of Row/tuple/list/dict, list, orpandas.DataFrame
+      	-- schema: StructType
+      	-- samlingRatio: used for inferring the schema
+      	-- verifySchema: verify data types of every row against schema, if not satisfied, then won't insert all things, ERROR
+      ```
+
+  * DataFrame API Basics
+
+    * only changing the output, not the original data
+
+    ```sql
+    -- select
+    DF.select('id','name')
+    DF.select(df['id'],df['name'])
+    
+    -- drop column
+    DF.drop('id')
+    
+    -- condition
+    DF.filter('zip == 94123')
+    DF.where('zip == 94123')
+    
+    -- rename columns
+    DF.withColumnRenamed('zip','zip_code')
+    
+    -- add columns
+    Df.withColumn('odd_zip', business_df['zip'] % 2) 
+    
+    -- sort values
+    DF.orderBy()
+    DF.sort(['name','id'],ascending=[True, False])
+    ```
+
+    
+
+# Part 7
+
+* SQL functions with DataFrame: Use SQL functions for calculation
+
+  ```python
+  from pyspark.sql.functions import *
+  from pyspark.sql.window import Window
+  ```
+
+  * Scalar functions : 
+
+    ```python
+    from pyspark.sql.functions import *
+    ```
+
+    * Return a single value for each row based on calculations on one or more columns
+
+      ```sql
+      -- math: abs, log, avg, count;
+      
+      -- string: length, concat, trim, contains;
+      business_df.withColumn('onHoward', col('street').contains('Howard')).show(5)
+      
+      -- time: year, date_add, datediff, next_day
+      ```
+
+  * Aggregate functions : 
+
+    * Return a single value for a group of rows.
+
+      ```sql
+      DF.groupBy() -- Take column names or a list of column objects
+      DF.agg(list_of_aggregate_fuctions)
+      -- aggregate function: min(), max(), sum(), count()
+      
+      DF.groupBy(col).max(col).min(col) # doesn't work
+      DF.groupBy('id').agg(min('num_bikes'), max('num_bikes'), avg('num_bikes')).show(5)
+      ```
+
+  * Window functions : 
+
+    ```python
+    from pyspark.sql.window import Window
+    ```
+
+    * Return several values for a group of rows.
+
+      ```sql
+      Window.partitionBy().orderBy(“col_name”).rowsBetween(start, end) 
+      
+      Window.partitionBy().orderBy(“col_name”).rangeBetween(start, end)
+      -- rangeBetween() doesn’t work with non-ordered windows, need to orderBy first then can use this
+      window.unbounded_preceeding/following
+      count('zip').over(Window.partitionBy('state').orderBy('zip').rowsBetween(-1,1))
+      
+      -- Window functions
+      lag(col, offset)
+      lead(col, offset)
+      row_number()
+      rank()
+      percent_rank()
+      dense_rank()
+      
+      -- narrow down to smaller dataset
+      ```
+
+  * User-defined functions (UDF) :
+
+    ```sql
+    udf(f=None, returnType=StringType) 
+        
+    udf_name = udf(lambda function definition or function name, returnType)
+                 data_frame.select(udf_name(col))
+    ```
+
+    * Generate custom scalar or aggregate functions.
+
+      ```sql
+      def check_sf(x):
+          if ('SF' in x) or ('San Francisco' in x):
+              return True
+          else:
+              return False
+      
+      check_sf = udf(check_sf)        
+              
+      check_sf = udf(lambda x: ('SF' in x) or ('San Francisco' in x))   
+      
+      business_df.select('name', check_sf('city')).show(5)
+      ```
+
+  * Join : Join two data frames.
+
+    ```sql
+    DF.join(dataframe, condition, join_type)
+    -- Join types: inner (default), left_outer, right_outer, leftsemi
+      -- outer: return unmatched rows from both tables
+      -- leftsemi: get the names within left table that appear in right table.
+    ```
+
+    
+
+* Registering DataFrame in the Table Catalog
+* Loading/Writing Data using SparkSQL
 
 
 
