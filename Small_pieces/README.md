@@ -13,3 +13,12 @@ When to use MinMaxScalar and StandardScalar?
 
 
 Unordered operation in Python: Set, no order, no index
+
+
+
+Logistic regression performs better on small dataset:
+
+* no assumption on distribution
+* data is linear seperable
+
+* Related: Linear SVC

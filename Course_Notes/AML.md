@@ -786,32 +786,13 @@ from torch.utils.data import Dataset, DataLoader
 
 # Part 5 Adaboost
 
-* **Kaggle competition**
-  
-  * **don;t use leaderboard too much may overfit**
-  * **figure out own way to explain the problem**
-    * **all positive, then do negative sampling**
-    * **sea...** 
-  * **random forest - new data,** 
-    * **user & item vectors as some features  to random forest and see** 
-    * **use item vectors to do random forest and see whether it works well with item_features**
-  * **classification**
-  * **put in some constant to check whether the data is balanced**
-  * **it can be multiple model combined together**
-    * **first whether gonna read or not**
-    * **then predict the ratings**
-    * **museum, movie, books, music,** 
-  * **get a mean user**
-    * **do average on embeddings**
-    * **compute a mean user by randomly asign labels to a user, like create a new user as u_n+1**
-  
-* Review of decision trees
+* Review of decision trees: popular, building block, interpretable
 
-  * bushy: Overfitting, high variance
+  * bushy: Overfitting, high variance(sensitive to small changes in data), low bias(good on traning data)
 
   * shallow: underfitting, hight bias
 
-  * Measure of impurity
+  * Measure of impurity： impurity is a way to define best
 
   * Tree notation:
     $$
@@ -819,9 +800,9 @@ from torch.utils.data import Dataset, DataLoader
     T(x; \theta) = \frac{1}{\# items}
     $$
 
-* Boosting question
+* Boosting question 
 
-  * Binary stump trees example, a
+  * Binary stump trees example,  $\hat{y} \in \{-1,1\}$
     $$
     T(x) = \mathbb{1}_{[x\in \{wind=false\}]} - \mathbb{1}_{[x\in \{wind=true\}]}
     $$
@@ -832,7 +813,7 @@ from torch.utils.data import Dataset, DataLoader
 
     * pros: fast, no-overfit
     * Cons: underfit, low accuracy
-    * *how to make it better: more features, ensamble, boosting*
+    * *how to make it better: more features, ensamble(random forest), boosting*
 
 * Ensemble models
 
@@ -846,29 +827,51 @@ from torch.utils.data import Dataset, DataLoader
     * *Initially a large bias, but Adaboost has a way to change bias over time.*
     * *no way to decrease bias, all trees are deep*
 
-* Weighted decision stumps 
+* Adaboost:
+
+  * Error
+    * classification error $= \frac{\#incorrect}{\#example}$
+      * find feature and threshold that minimize the classification error
+    * weighted classification error = $\frac{error \ weight}{total \ weight }$  $\theta^* = argmin_{\theta} \frac{\sum_{i=1}^N w_i \mathbb{1}_{[y^{(i)}\ne T(x^{(i)};\theta]}}{\sum_{i=1}^{N}w_i}$
+  * Weighted decision stumps 
+
   $$
-  \theta^* = argmin_{\theta} \frac{\sum_{i=1}^N w_i \mathbb{1}_{[y^{(i)}\ne T(x^{(i)};\theta]}}{\sum_{i=1}^{N}w_i}\\
-  
   w_i = w_i \cdot exp[\alpha_m \cdot \mathbb{1}_{[y^{(i)}\ne T(x^{(i)}]}]\\ 
   \text{where }\alpha_m = log(\frac{1-err_m}{err_m}) \text{, lower error, higher weight}
   $$
 
   * *the weights are only used for classification error in training* 
 
-    * *round1: pick the lowerest error tree and update the mis-classified item rate, if the err is $< 0.5$, then $w_i$ will increase and we will never get an error rate $>0.5$,*
+    * round1: pick the lowerest error tree and update the mis-classified item rate, if the err is $< 0.5$, then $w_i$ will increase and we will never get an error rate $>0.5$
       $$
-      w_i = w_i \times log(\frac{1-err}{err})
+      w_i = w_i \times e^{log(\frac{1-err}{err})}
       $$
 
+      * strategy is to just misclassify those has lower weights and make right those larger weight
+      
     * *round 2: pick the lowest error rate tree and update $w_i$ again*
+
     * final vote with all trees, thought each based on former
 
-  * strategy is to just misclassify those has lower weights and make right those larger weight
+      * $\alpha_m = log(\frac{1-err_m}{err_m})$, tree has larger weight if error is small
+      * $f(x) = \sum_{m=1}^{M}\alpha_m T_m(x)$,
+      * $F(x) = sign(f(x))$
 
-* Lab: start working on the Kaggle competition
+  * psudocode
 
-
+    >Initialize weights $w_i = \frac{1}{N}, i \in [1,2,...,N]$ 
+    >
+    >for m = 1 to M:
+    >
+    >* Fit a decision stump on $T_m(x) = T(x, \theta_m)$ using weight $w_i$
+    >* $err_m = \text{weighted classificaiton error} = \frac{wrong \ weight}{total\ weight}$
+    >* $\alpha_m = log(\frac{1-err_m}{err_m})$
+    >* $w_i = w_i \times e^{\alpha_m \cdot \mathbb{1}_{[y_i \ne T_m(x_i)]}} $
+    >* next tree
+    >
+    >$f(x) = \sum_{m=1}^{M}\alpha_m T_m(x)$
+    >
+    >$F(x) = sign(f(x))$
 
 # Part 6 Gradient Boosting
 
@@ -876,10 +879,10 @@ from torch.utils.data import Dataset, DataLoader
 
   - stump tree with only one feature,  pick the lowest error rate
   - Weight observations of misclassified with this error rate log(/)
-  - Redo pick loest error rate with weight
+  - Redo pick lowest error rate with weight
   - in random forest, tree are same, sometime forget a feature
 
-- additive modelingintuition
+- additive modeling intuition
 
   - in adaboost, average classifiers
 
@@ -894,14 +897,17 @@ from torch.utils.data import Dataset, DataLoader
   $$
 
   - Intuition: decomposing a simple terms, it may not be good
+    -  $y = 5+2x+sin(5x) \Rightarrow y-5-2x=sin(5x)$
 
 - gradient boosting
+
+  - stage forward additive model: additive=fitting a sum of basis functions. "Forward stagewise"=adding a new basis function (tree in this case) at a time.
 
   - $$
     \hat{y} = \bar{y} + T_1(x) + T_2(x) + ...
     $$
 
-  - *random forest, always fit on the same data, worry about overfit, gradient boosting use different?*
+  - *random forest, always fit on the same data, worry about overfit, gradient boosting use different part of data *
 
 - Gradient boosting for Regression with MSE
 
@@ -916,6 +922,19 @@ from torch.utils.data import Dataset, DataLoader
         - compute the MSE the two side of a split
       - random split x, and  predcit 
 
+  - pseudocode
+
+    >Initialize $f_0 = \bar{y}$
+    >
+    >for m = 1 to M:
+    >
+    >* $r_i = y^{(i)} - f_{m-1}(x^{(i)})\ for \ i =1,2,...,N$
+    >* Fit a regression tree to the targets $r_i$ giving $T_m(x)$
+    >* Update $f_m(x) = f_{m-1}(x) + T_m(x)$
+    >* next tree
+    >
+    >$F(x) = f_M(x)$
+
 - Gradient boosting for Regression with MAE
 
   ![msebg](image/maegb.png)
@@ -928,43 +947,158 @@ from torch.utils.data import Dataset, DataLoader
 
     - find best split of x = x, **y = sign(SE), this is a classification**:
       - compute the MSE the two side of a split
-
     - random split x, and  predcit 
 
-- What all these algorithms have in common?
+  - pseudocode
 
-- Gradient boosting
+    >Initialize $f_0 = median(y)$
+    >
+    >for m = 1 to M:
+    >
+    >* $r_i = sign(y^{(i)} - f_{m-1}(x^{(i)}))\ for \ i =1,2,...,N$
+    >* Fit a classification tree to the targets $r_i$ giving terminal regions $R_{jm} = 1,.., J_m$
+    >* in each $R_{jm}$, $β_{jm} = median_{x^{(i)}\in R_{jm}}\{y^{(i)} - f_{m-1}(x^{(i)}\}+ β_{jm}$
+    >* Update $f_m(x) = f_{m-1}(x) + \sumβ_{jm}\mathbb{1}_{[x^{(i)} \in R_{jm}]}$
+    >* next tree
+    >
+    >$F(x) = f_M(x)$
 
-  - Regularization for boosting: learning rate
+  - What all these algorithms have in common?
+
+    - Simliar:
+      - Computing trees in a sequential way
+      - Final model is a sum of weighted trees
+    - Different:
+      - Trees in adaboost are fitted on the same data but changing weights
+      - Trees in boosting are fitted by modifying the target variable
+
+  - Regularization for boosting: learning rate/shrinkage, important
     $$
     f_m(x) = f_{m-1}(x) + vT(x;\theta_m)
     $$
+    
 
-* algorithm
-  $$
-  f_0(x) = argmin_\beta \sum \\
-  
-  r_i = -[\frac{\partial L(y,f)}{\partial f}]\\
-  
-  \begin{align*}
-  r_i &= -\frac{\partial L}{\partial f}|_{f=f_{m-1}(x^{(i)}), y = y^{(i)}} \\
-  & = y^{(i)}-f_{m-1}(x^{(i)})\\
-  \end{align*}
-  $$
+    * If decrease learning rate need to increase the numberof three (M): 
+      * First fix a learning rate (say 0.1). Then find the optimal M. Then you can divide learning rate by 2 and set M = 2M.
 
-  $$
-  \begin{align*}
-  \beta &= argmin_{\beta} \sum_{x^{(i)} \in R} L(y^{(i)}, f_{m-1}(x^{(i)}+\beta))\\
-  &= \sum_{}
-  \end{align*}
-  $$
+  - aggregate algorithm
 
+    >$f_0(x) = argmin_\beta \sum $
+    >
+    >for m=1 to M: 
+    >
+    >* $\begin{align*}
+    >  r_i &= -\frac{\partial L}{\partial f}|_{f=f_{m-1}(x^{(i)}), y = y^{(i)}} \\
+    >   & = -\frac{\partial(y^{(i)}-f_{m-1}(x^{(i)}))}{\partial f_{m-1}(x^{(i)})}\\
+    >   \end{align*}$
+    >* fit a regression tree on $r_i$
+    >
+    >*  $\beta &= argmin_{\beta} \sum_{x^{(i)} \in R} L(y^{(i)}, f_{m-1}(x^{(i)}+\beta))\\$
+    >* Update $f_m(x) = f_{m-1}(x) + \sumβ_{jm}\mathbb{1}_{[x^{(i)} \in R_{jm}]}$
+    >* next tree
+    >
+    >$F(x) = f_M(x)$
 
+* Gradient boosting for classification
 
+  * margin > 0 correct, < 0 misclassified, = 0 is the decision boundary
+    $$
+    f(x) = \sum a_m T_m(x) \\
+    \hat{y} = sign(f(x)) \\
+    margin = y \cdot f(x), y \in \{-1,1\}
+    $$
 
+    * this is the residual for binary classification
+    * loss function of binary classification is written as a function of margin
 
+  * loss function
+    $$
+    f(x) = a\cdot x +b \\
+    \hat{y} = sigmoid(f(x)) = \frac{1}{1+e^{-f(x)}} \\
+    L(y,\hat{y}) = -(ylog(\hat{y}) + (1-y)log(1-\hat{y}))\\
+    \\
+    \text{when y} \in \{-1, 1\}:\\
+    L(y,f(x)) = log[1+e^{-yf(x)}]
+    $$
 
+    * loss functions penalize negative margins
+      * logistic regression: log loss $L(y, f(x)) = log(1+e^{-yf(x)})$, robust
+      * SVM: hinge loss $L(y, f(x)) = max(0,1-yf(x))$, robust
+      * Adaboost: minimize exponential loss $L(y, f(x)) = e^{-yf(x)}$, not robust
 
+  * algorithm
+
+    >Initialize $f_0 = log(\frac{1+\bar{y}}{1-\bar{y}})$
+    >
+    >for m = 1 to M:
+    >
+    >* $r_i = \frac{y^{(i)}}{1+e^{y^{(i)}f_{m-1}(x^{(i)})}}\ for \ i =1,2,...,N$
+    >* Fit a classification tree to the targets $r_i$ giving terminal regions $R_{jm} = 1,.., J_m$
+    >* in each $R_{jm}$, $β_{jm} = \frac{\sum_{x^{(i)}\in R_{jm}} r_i}{\sum_{x^{(i)}\in R_{jm}} |r_i|(1-|r_i|)}$
+    >* Update $f_m(x) = f_{m-1}(x) + \sumβ_{jm}\mathbb{1}_{[x^{(i)} \in R_{jm}]}$
+    >* next tree
+    >
+    >$F(x) = f_M(x)$
+
+  * additive model and Forward Stagewise Additive Modeling
+
+    >* Additive modeling 
+    >
+    >  * the solution to adaboost is a weighted sum of “basis” functions
+    >
+    >    * e.g. adaboost
+    >
+    >  * these model are fit by **minimizing** a loss function averaged over the training data
+    >    $$
+    >    min_{(a_m, \theta_m)_1^M}\sum_{i=1}^{N}L(y^{(i)}, \sum_{m=1}^{M} \alpha_mT(x^{(i)}; \theta_m))
+    >    $$
+    >
+    >* Forward Stagewise Additive Modeling
+    >
+    >  * greedy optimization algorithm in which each function is added one at a time.
+    >  * Previously added terms are not modified.
+    >  * e.g. gradient boost 
+    >    * generalization of Adaboost
+    >    * Fitting additive models using Stagewise Additive Modeling
+    >    * Any loss function can be optimized
+
+* XGBoost parameters: L1 and L2 regularization
+
+* Random Forest versus Gradient Boosting
+
+  >* Gradient Boosting generally perform better than a random forest
+  >  * Gradient Boosting have a few hyper-parameters to tune
+  >  * Random forest is almost tuning-free
+  >    * how big a tree can grow
+  >      * max_depth or min sample per leaf 
+  >    * max_features
+  >
+  >* Random Forest
+  >
+  >  - Uses fully grown decision trees (low bias, high variance).
+  >
+  >  - As the number of trees increases, the variance decreases.
+  >
+  >  - The trees are made uncorrelated to maximize the decrease in variance
+  >
+  >  - But the algorithm cannot reduce bias
+  >    - Need for large trees, so that the bias is initially as low as possible.
+  >
+  >* Gradient Boosting
+  >  - Uses weak learners (shallow decision trees)
+  >  - Shallow decision trees have low variance but high bias
+  >  - Gradient boosting tackles the error reduction task by reducing bias as thenumber of trees increases
+  >  - Decrease variance by averaging
+
+* Neural Network versus Gradient boosting
+
+  >- Random Forest and Gradient Boosting models work well on tabular data.
+  >  - Each column of a tabular data has high information content on its own
+  >  - Demographic features, such as the age and gender of a person
+  >- Neural Nets useful when applied to “raw” sensory data
+  >  - Speech, Images, NLP
+  >  - Individual feature contains very little information
+  >  - Some success on training embeddings for categorical features on tabular data
 
 # Day-8
 
@@ -978,9 +1112,99 @@ from torch.utils.data import Dataset, DataLoader
           )
   ```
   
-
 * Gradient boost works better with tabular data
 * Neural Networks: 
   * user id, item id, data, learn representation
   * image, video, text
   * concatenate embedding, put into ReLU, embedding user, item, item_feature, user_content
+
+
+
+
+
+# Day - 9
+
+* review of logistic regression
+
+  * Binary - sigmoid
+  * Multi-class - softmax: $\sum \hat{y_k} =1$
+    * logits $\in \mathbb{R}$
+    * $z = W \cdot x +b \Rightarrow \hat{y} = softmax(z)$
+
+  * Nenural Network, $X \in \mathbb{R}^D, X_{D \times 1}, while \ W_{M \times D}, \Rightarrow  WX = Z_{M \times 1}$
+    $$
+    z^{[1]} = W^{[1]} \cdot x^{[1]} + b^{[1]}\\
+    a^{[1]} = h(z^{[1]}), \text{non-linear}\\ 
+    \\
+    z^{[2]} = W^{[2]} \cdot a^{[1]} + b^{[2]}\\
+    \\
+    \hat{y} = z^{[2]} \Rightarrow regression\\
+    \hat{y} = Sigmoid(z^{[2]}) \Rightarrow binary \\
+    \hat{y} = Softmax(z^{[2]}) \Rightarrow multiclass
+    $$
+
+    ```
+    nn.Linear(D, M),
+    nn.Sigmoid(), # a linear up a linear is still a linear, so we need non-linear 
+    nn.Linear(M, 1) # binary
+    nn.Linear(M, K) # multi-class
+    ```
+
+  * W is randomly assigned and use back propaganda to update
+
+* Neural Network can approximate any functions
+
+  * softmax gives out three columns and do argmax
+  * sigmoid gives out 1 columns and >=0.5 => 1
+  * Activation Functions
+    * non-final layers
+      * Sigmoid is not frequently used: $\in [0,1]$ quickly and then hard to move around
+      * tanh is used for RNNs: $\in [-1, 1]$ Slowly
+      * ReLU and ReLU-liked (Leaky ReLU $\in max(0.1x, x)$; ELU, Maxout) functions is uesd everywhere
+    * final layers
+      * Identity: it self for regression
+      * Sogmoid: binary
+      * Softmax: multiclass
+
+* For tabular data
+
+  * One-hot-encoding: 
+    * don't use when too many category
+    * it ignores the relationship between categories like zipcodes both in CA
+
+  * with pytorch
+
+    ```python
+    # normalize all integer
+    # embedding some categorical
+    
+    self.emb = nn.embedding() # label encoding all the zipcode
+    self.linear_1 = nn.linear(_, _)
+    self.linear_2 = nn.linear(_, _)
+    
+    def forward(Z, X):
+    		Z = self.emb(z) # pick the randomly initialized zipcode Embedding
+    		X = torch.cat([X, Z], axis=1)
+        X = self.linear_1(x)
+        X = F.relu(X)
+        return self.linear_2(x)
+    ```
+
+  * Pinterest 
+    * if a user click 2 picture continouslt, let 1st be x, 2st be y
+    * finally is a multi class prediction
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

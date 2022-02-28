@@ -425,7 +425,7 @@
 
 * some cheatsheet from professor Parr
 
-<img src="/Users/caoyanan/Library/Mobile Documents/com~apple~CloudDocs/Yena/Github/Memory_Baguette/Course_Notes/image/complexity (dragged)1.png" alt="complexity (dragged)1" style="zoom:;" />
+<img src="/Users/caoyanan/Library/Mobile Documents/com~apple~CloudDocs/Yena/Github/Memory_Baguette/Course_Notes/image/complexity (dragged)1.png" alt="complexity (dragged)1" style="zoom: 25%;" />
 
 <img src="/Users/caoyanan/Library/Mobile Documents/com~apple~CloudDocs/Yena/Github/Memory_Baguette/Course_Notes/image/complexity (dragged)2.png" alt="complexity (dragged)2" style="zoom:;" />
 
@@ -840,3 +840,126 @@
   - If mapping to unique bucket is hard, as with floating-point numbers, use bin/bucket sort like a hash table; O(n) if reasonably evenly distributed and enough buckets
   - Use ord(char) for strings to bucket sort
   - Use all letters in strings to get nested bucket sort (called a TRIE)
+
+
+
+
+
+## Searching
+
+* common searching strategies: m is search string, n is vocab size
+
+  * linear  O(mn): scan
+
+  * binary O(mlog(n)): if data sorted
+
+    ```python
+    def binsearch(a,x):
+      left = 0; right = len(a)-1 
+      while left<=right:
+        mid = (left + right)//2
+        if a[mid]==x: 
+          return mid
+        if x < a[mid]: 
+          right = mid-1 
+        else: 
+          left = mid+1
+    	return -1
+    
+    
+    # keep the slice instead of get the chunk everytime
+    def binsearch(a,x,left,right): 
+      if left > right: 
+        return -1 
+      mid = (left + right)//2
+    	if a[mid]==x: 
+        return mid 
+      if x < a[mid]:
+    		return binsearch(a,x,left,mid-1) 
+      else:
+    		return binsearch(a,x,mid+1,right)
+      
+      
+    left = 0; right = len(a)-1 while left<=right:
+    mid = (left + right)//2
+    if a[mid]==x: return mid
+    if x < a[mid]: right = mid-1 else: left = mid+1  
+    ```
+
+  * binary tree O(mlog(n))
+
+  * hash table O(m)
+
+    * String matching: search word in a list of letters
+
+      * brute force O(mn)
+
+      * hash search: hash code of word (Rabin-Karp algorithm)
+
+        ```python
+        def search(doc, s) -> int: 
+        	n = len(doc); m = len(s) 
+        	hs = hash(s)
+        	for i in range(0,n-m+1):
+        		hdoc = hash(doc[i:i+m]) # slow O(m) if hdoc==hs: # fast
+        	if s==doc[i:i+m]: # slow
+            return i
+          return -1
+          
+        def hash(s:str)->int:
+        	return sum(ord(c) for c in s) 
+        
+        # How about next hash is old hash minus doc[i] plus doc[i+m]
+        hdoc = hdoc - ord(doc[i]) + ord(doc[i+m])
+        ```
+
+      * Tries” or Prefix Trees
+
+        ```python
+        class TrieNode:
+        def __init__(self):
+        self.edges = {}
+        
+        def add(p:TrieNode, s:str, i=0) -> None: 
+        	if i>=len(s): return
+        	if s[i] not in p.edges:
+        		p.edges[s[i]] = TrieNode() 
+          add(p.edges[s[i]], s, i+1)
+        ```
+
+        * two words “**ape**” and “**apex**”?
+
+          ```python
+          class TrieNode:
+          	def __init__(self):
+          	self.isword = False 
+            # set to true if accept state, so we can also check here 
+            self.edges = {}
+          
+          def add(p:TrieNode, s:str, i=0) -> None: 
+            if i>=len(s): 
+              p.isword=True; 
+              return 
+            if s[i] not in p.edges:
+          		p.edges[s[i]] = TrieNode() 
+              add(p.edges[s[i]], s, i+1)
+              
+          def search(root:TrieNode, s:str, i=0) -> bool: 
+            p = root
+          	while p is not None:
+          		if i>=len(s): return True
+          		if s[i] not in p.edges: return False 
+              p = p.edges[s[i]]
+          		i += 1
+          	return True    
+          ```
+
+        * **Exercise**: find all words starting with prefix
+
+        * **Exercise**: How to build a suffix tree?
+
+        * **Exercise**: Given misspelled words off by 1 letter only, find all possible words
+
+  * state machines O(m)
+
+* * 

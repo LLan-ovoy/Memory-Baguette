@@ -1,10 +1,17 @@
-```
+```bash
 mongod --dbpath=/Users/caoyanan/Desktop/USF/697_distributed_datasys/data/db
 
 mongoimport --db msds697 --file /Users/caoyanan/Desktop/USF/697_distributed_datasys/HW/HW2/business.json
 
 mongoimport --db msds697 --file /Users/caoyanan/Downloads/usf_locations.js
 ```
+
+```bash
+spark-submit quiz1.py > result.txt
+diff result.txt output.txt
+```
+
+
 
 # Part 1 NoSQL
 
@@ -481,8 +488,8 @@ db..find(
 
 * **Aggregation Operations (aggregation pipeline)**
 
+  * Perform several stages of operations: each stage's perform output are passed to next stage
   * aggreagte pipeline
-
     * 'in manhattan , calculate the avg score for each grade in grades'
       * filter manhattan 
       * project grades only
@@ -510,18 +517,20 @@ db..find(
   * transform_operators performs operations including 
     * filtering, transformation, grouping, sorting 
       * `$match, $project, $group, $unwind, $sort, $lookup(outer join) etc.`
-
+    * Field Path $\<field\> in criteria
+      *  "\$\<field\>" is equivalent to "\$$CURRENT.\<field\>"
+    
   * match
 
   * ```sql
-    { $match: { <query> } }
+    {$match: {<query>}}
     
     db.world_bank_project.aggregate([{$match:{'mjtheme_namecode.name':"Human development"}}]}
     ```
 
   * project
 
-    * project output or add new fields
+    * project output or add new fields, or rename
 
     * ```sql
       { $project : { <specification(s)> } }
@@ -538,7 +547,7 @@ db..find(
     $eq/gt/lt -- takes []***
     -- { $gt: [ "$<field>", <value> ] }
     $filter 
-    -- {$filter: { input:"$<array_field>" , as: "<new-varname>”, cond: <expression> } }
+    -- {$filter: {input:"$<array_field>" , as: "<new-varname>”, cond: <expression>}}
     $size
     --  {$size: "$<array_field>" }
     $cond
@@ -546,14 +555,13 @@ db..find(
     $concat
     -- {$concat: ["$<field1>", "$<field2>", ... ] }
     $dateDiff
-    --  { $dateDiff: { startDate: "$<field1>", endDate: "$<field2>", unit: "day"}
+    --  { $dateDiff: {startDate: "$<field1>", endDate: "$<field2>", unit: "day"}
     $convert
     -- {$convert : {input : "$<field>”, to: "data_type”}}
-    
     ```
-
+    
     * Example, $$ goes even further to next level
-
+    
     * ```sql
       db.world_bank_project.aggregate(
                    {$project:{'id':1, '_id':0,
@@ -568,7 +576,7 @@ db..find(
                     {$project:{'array_size':0}}
                     )
       ```
-
+    
   * Group
 
     * ```sql
@@ -581,17 +589,16 @@ db..find(
       ```
 
 
-  * unwind
+  * unwind: from 1:[1,2,3] to 1:1, 1:2, 1:3
 
     * ```sql
-      {$unwind: '$<field_path>'}
-      
+      {$unwind: '$<field_path>'} -- when need to group igorning array
       
       db.world_bank_project.aggregate([{$unwind: '$theme_namecode'}, 
                                        {$group:{'_id':'$theme_namecode',' 
                                        					'count':{$sum:1}}}])
       ```
-
+    
   * Sort
 
     * ```sql
@@ -604,7 +611,7 @@ db..find(
                           						 {$sort:{'approvalfy_num':-1}}])
       ```
 
-  * lookup
+  * lookup: left outer join:  adds a new array field
 
     * ```sql
       db.<collection_1>.aggregate({$lookup:{localField: “<field_1>”, 
@@ -622,6 +629,9 @@ db..find(
 
 * Index
 
+  
+  * without field, MongoDB perform a collection scan: scan every document in a collection, to select those documents that match the query statement
+  
   * which field you want to use, interested in for retrieving
   
   * B-tree: binary based on range
@@ -629,27 +639,43 @@ db..find(
   * hash into buckets
   
   * ```sql
-    db.business.createIndex({'field':'hash'})
+    db.business.createIndex({'field':value})
+    -- Range-based indexes: B-tree data structure by default
+    	-- Direction : 1 (Ascending), -1 (Descending)
+    -- Hashed indexes – “hashed”
+    -- other index types including text index, 2d index
+    
     db.business.getIndexs()
+    -- Check which indexes exist on a collection
+    -- Default : _id (Cannot be deleted)
+    
     db.business.dropIndex({'field': direction})
     ```
+  
 
 
 
 # Part 5
 
+* single server: easy to manage operations, graph db
+
 * distributeds models
-  * Aggregate
+  
+  * Aggregate: collet of related object as a unit; natural unit
   * two ways for data distributed
-    * sharding
-    * Replication
+    * sharding: different data on different nodes
+    * Replication: copy same data over multiple nodes
+      * primary-secondary replication
+      * Peer to peer replication
   * sharding: Improves scalability
     * distirbuted data to diff server, each has own read and write
-    * consider: Locate the data commonly accessed together on the same node
+    * consider: Locate the data commonly accessed together on the same node/ physical location; keep load even
     * Pro/cons
       * Pros : Improves read and writes.
       * Cons : Low resilience, if one small-db dies, all lose
-    * mongoDB auto-sharing: shard, balance, access
+    * mongoDB auto-sharing: autoshard, balance, access to the right one
+      * mongod: Primary database process (a daemon) that runs on an individual server.
+      * mongos: Routing process to manage storing different data on different servers and query against the right server.
   * Replication: redundancy but increase acailability
     * Provides fault tolerance against the loss of a single database server
     * type:
@@ -661,28 +687,34 @@ db..find(
         - if primary dead, will automated choose ganother secondary as primary
       * Secondaries
         - Contains copied data from a master.
+      * pro/con:
+        * Pro: scalability, intensive read; resilience
+        * Cons: poor intensive write, inconsistency
       * Peer-to-peer replication
   
 * sharding + replications = **Scalability + Fault Tolerance**
   *  Primary-Secondary replication and sharding
     * Multiple nodes.
-    * Each data only has one master.
-    * A node can be a master for some data and slave for others.
-  
+      * Each data only has one master.
+      * A node can be a master for some data and slave for others.
+
 * CAP Theorem => only get two
 
-  * Consistancy
-    * all nodes on-dated
-    * when updating, cannot write (sacrifies availability)
+  * ACID addresses an individual node's data consistency. CAP addresses cluster-wide data consistency 
+    * Consistancy
+      * all nodes on-dated
+      * when updating, cannot write (sacrifies availability)
 
-  * Availability
-    * Non-failing node must response
+    * Availability
+      * Non-failing node must response
 
-  * Partition Tolerance - communication
-    * survive from **communication** breakages
+    * Partition Tolerance - communication
+      * survive from **communication** breakages
 
 
-  * MongoDB: mainly Consistancy and partition Tolerance, but can configure
+
+    * MongoDB: mainly Consistancy and partition Tolerance, but can configure
+
 
 
 
@@ -881,14 +913,399 @@ db..find(
       -- leftsemi: get the names within left table that appear in right table.
     ```
 
-    
+
+
+```sql
+from pyspark.sql.window import Window
+from pyspark.sql.functions import s*
+
+-- aggregation
+DF.groupBy() -- Take column names or a list of column objects
+DF.agg(list_of_aggregate_fuctions)
+-- aggregate function: min(), max(), sum(), count()
+DF.groupBy('id').agg(min('num_bikes'), max('num_bikes'), avg('num_bikes')).show(5)
+
+-- window
+from pyspark.sql.window import Window
+Window.partitionBy().orderBy(“col_name”).rowsBetween(start, end) 
+Window.partitionBy().orderBy(“col_name”).rangeBetween(start, end)
+-- rangeBetween() doesn’t work with non-ordered windows, need to orderBy first then can use this
+window.unbounded_preceeding/following
+count('zip').over(Window.partitionBy('state').orderBy('zip').rowsBetween(-1,1))
+-- Window functions
+lag(col, offset)
+lead(col, offset)
+row_number()
+rank()
+percent_rank()
+dense_rank()
+-- narrow down to smaller dataset
+
+-- udf
+def check_sf(x):
+    if ('SF' in x) or ('San Francisco' in x):
+        return True
+    else:
+        return False
+check_sf = udf(check_sf)        
+check_sf = udf(lambda x: ('SF' in x) or ('San Francisco' in x))   
+business_df.select('name', check_sf('city')).show(5)
+
+
+-- join
+DF.join(dataframe, condition, join_type)
+-- Join types: inner (default), left_outer, right_outer, leftsemi
+  -- outer: return unmatched rows from both tables
+  -- leftsemi: get the names within left table that appear in right table.
+```
+
+
+
+
+
+
+
+
 
 * Registering DataFrame in the Table Catalog
+
+  * save as table
+
+    ```sql
+    -- Save as table: create a spark warehouse directory
+    DF.write.saveAsTable(name, format=None, mode=None, partitionBy=None)
+    
+    business_df.write.saveAsTable('Business')
+    ```
+
+  * query by SQL after registering
+
+    ```sql
+    ss.sql('SELECT * FROM table_name')
+    ```
+
+  * To specific directory instead of current path
+
+    ```sql
+    DF.write.option("path", "/spark-warehouse/business").saveAsTable(name)
+    
+    ss.sql("SELECT * FROM parquet.`/spark-warehouse/business`").show(5)
+    -- "`" not "'"
+    ```
+
+    * Spark will write data to a default table path. When the table is dropped, the default table path will be removed too.
+    * Parquet : Column-oriented data storage format ; Efficient compression and encoding scheme.
+
 * Loading/Writing Data using SparkSQL
 
+  * Datatypes 
+
+    * JSON 
+
+      ```sql
+      -- {key: value}, no fixed schema
+      world_bank_prj = ss.read.json('../Data/world_bank_project.json')
+      
+      world_bank_prj.write.json('world_bank_project')
+      ```
+
+      * look through all the field and create a data frame, it is autoinfering the schema, cannot assign schema
+
+    * CSV
+
+      ```sql
+      business_df = ss.read.csv('../Data/SF_business/filtered_registered_business_sf.csv')
+      -- can assign schema, but it won't work, if want, need to do createDataFrame from RDD
+      -- business_schedma = StructType([StructField("zip", IntegerType(), True), StructField("name", StringType(), True),StructField("street", StringType(), True), StructField("city", StringType(), True),StructField("state", StringType(), True)])
+      
+      business_df.coalesce(1).write.csv('sf_business')
+      -- coalesce minimizes the data shuffle, while repartition is more
+      ```
+
+    * Parquet
+
+      ```sql
+      supervisor_df = ss.read.parquet('/Users/caoyanan/Desktop/USF/697_distributed_datasys/msds697_distributed_data_systems_2022/Day8/spark-warehouse/supervisor')
+      -- only input the directory, since there are more than one parquet
+      
+      df.write.parquet(<file_path>, etc)
+      ```
+
+      
+
+  * Data Sources
+
+    * S3
+
+      * s3a: Hadoop’s client which offers high-performance IO against Amazon S3 object store.
+
+      * configuration
+
+        * JAR files - add aws-java-sdk-bundle and hadoop-aws jars
+
+          ```sql
+          ss = SparkSession.builder.config("spark.jars.packages", "com.amazonaws:aws-java-sdk-bundle:1.11.901,org.apache.hadoop:hadoop-aws:3.3.1").getOrCreate()
+          
+          -- version 1.11.901 should be comportable with version 3.3.1
+          ```
+
+          * Check whether matching: https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk
+
+        * Add AWS Access Key and Secret Key.
+
+          ```sql
+          ss._jsc.hadoopConfiguration().set("fs.s3a.access.key", os.environ['AWS_ACCESS_KEY_ID'])
+          ss._jsc.hadoopConfiguration().set("fs.s3a.secret.key", os.environ['AWS_SECRET_ACCESS_KEY'])
+          ```
+
+        * Use 
+
+          ````sql
+          ss.csv.read('s3a://bucket/path')
+          ````
+
+    * Relational Databases and Other DB (MongoDB) with JDBC
+
+      ```sql
+      from pyspark.sql import SparkSession
+      
+      spark = SparkSession \
+          .builder \
+          .appName("myApp") \
+          .config("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:2.4.0")\ 
+          				-- for databrick, avoid connection be restarted
+          .config("spark.mongodb.input.uri", "mongodb+srv://UPDATE:UPDATE@UPDATE/msds697.business")\
+          .config("spark.mongodb.output.uri", "mongodb+srv://UPDATE:UPDATE@UPDATE/msds697.filtered_business")\
+          .config("spark.network.timeout", "3600s")\
+          .getOrCreate()
+      ```
+
+      * Read and write: everytime goes wrong, restart kernel
+
+        ```sql
+        df = spark.read.format('com.mongodb.spark.sql.DefaultSource').load() -- load from input uri
+        
+        df.write.format("com.mongodb.spark.sql.DefaultSource")\ -- write to output uri
+                .mode("overwrite")\
+                .option(“database","db_name")\
+                .option("collection", "collection_name")\
+                .save()
+        ```
+
+        
+
+```
+DF.na.fill(0, ['count'])
+```
 
 
 
+# Part 8
 
+* Machine Learning With Spark (Spark ML)
 
+  * MLlib DateFrame-based, not cover MLlib Rdd-based
 
+  * Main Components
+
+    * 3 ML component
+
+      * Estimators (ML algorithm itself): return a transformer
+      * Fransformers: return transformed data
+        * feature transformer: return new columns like feature vectors
+        * learning model: return predicted label
+  
+      * Evaluators: metrics
+  
+    * 2 architecture 
+  
+      * ML parameters: hyper parameter
+        * `ParamGridBuilder()` to select in the set of parameter in `CrossValidator()` => return the best model among the hyperparameters
+      * ML pipeline
+        * string indexer: we want `cat.code without order`, to remove order use `one-hot encoding`
+  
+  * Algorithms
+  
+    > * Feature  Extractors, Transformers, Selector and Locality Sensitive Hashing.
+    >
+    >   - Feature Extractors : 
+    >     - [TF-IDF](https://spark.apache.org/docs/2.0.0-preview/ml-features.html#tf-idf), 
+    >     - Word2Vec, 
+    >     - CountVectorizer, 
+    >     - FeatureHasher
+    >
+    >   - Feature Transformer : 
+    >     - Tokenize, 
+    >     - StopWordsRemover, 
+    >     - n-gram, 
+    >     - Binarizer, 
+    >     - PCA, 
+    >     - PolynomialExpansion, 
+    >     - Discrete Cosine Transform (DCT), 
+    >     - StringIndexer, 
+    >     - IndexToString, 
+    >     - OneHotEncoder , 
+    >     - OneHotEncoderEstimator, 
+    >     - VectorIndexer, 
+    >     - Interaction, 
+    >     - Normalizer, 
+    >     - StandardScaler, 
+    >     - MinMaxScaler, MaxAbsScaler, 
+    >     - Bucketizer, 
+    >     - ElementwiseProduct, 
+    >     - SQLTransformer, 
+    >     - VectorAssembler, 
+    >     - VectorSizeHint, uantileDiscretizer, 
+    >     - Imputer
+    >
+    >   - Feature Selectors : 
+    >     - VectorSlicer, 
+    >     - Rformula,
+    >     -  ChiSqSelector
+    >
+    >   - Locality Sensitive Hashing :
+    >     - LSH Operations : 
+    >       - Feature Transformation, 
+    >       - Approximate Similarity Join, 
+    >       - Approximate Nearest Neighbor Search
+    >     - LSH Algorithms : 
+    >       - Bucketed Random Projection for Euclidean Distance, 
+    >       - MinHash for Jaccard Distance
+    >
+    >   * Classification and Regression
+    >     - Classification : 
+    >       - Logistic regression, 
+    >       - Decision tree classifier, 
+    >       - Random forest classifier, 
+    >       - Gradient-boosted tree classifier, 
+    >       - Multilayer perceptron classifier, 
+    >       - One-vs-Rest classifier (a.k.a. One-vs-All), 
+    >       - Naive Bayes, 
+    >       - Linear Support Vector Machine
+    >     - Regression: 
+    >       - Linear regression, 
+    >       - Generalized linear regression, 
+    >       - Decision tree regression, 
+    >       - Random forest regression, 
+    >       - Gradient-boosted tree regression, 
+    >       - Survival regression , 
+    >       - Isotonic regression
+    >     - Decision trees
+    >     - Tree Ensembles: 
+    >       - Random Forests, 
+    >       - Gradient-Boosted Trees (GBTs)
+    >   * Clustering : 
+    >     * K-means, 
+    >       Latent Dirichlet allocation (LDA), 
+    >     * Bisecting k-means,
+    >     * Gaussian Mixture Model (GMM)
+    >   * Collaborative filtering for Recommender Systems 
+    >   * Frequent Pattern Mining : 
+    >     * FP-Growth,
+    >     *  PrefixSpan
+  
+  * Logistic Regression
+  
+    * Step1: $adult.dat \Rightarrow spark.DF$
+  
+      * create RDD, change data type, define schema, create DF
+  
+        ```sql
+        census_raw = sc.textFile('adult.raw').map(lambda x: x.split(', ')).map(lambda x: [toDoubleSafe(i) for i in x])
+        
+        adultschema = ...
+        
+        dfraw = ss.createDataFrame(census_raw, adultschema)
+        ```
+  
+      * missing value: mode imputing
+  
+        ```sql
+        -- check missing
+        for col in dfraw.columns:
+        dfraw.groupby('{}'.format(col)).count().sort('count', ascending=False).show()
+        
+        -- replace
+        dfraw = dfraw.replace(['?'],['Private'], ['workclass'])
+        dfraw.groupby('workclass').count().sort('count').show()
+        ```
+  
+      * categorical string: 
+  
+        * `StringIndexerModel() `: string categorical values into integer indexes
+  
+          ```python
+          #converting strings to numeric values
+          from pyspark.ml.feature import StringIndexer
+          
+          def stringindex_trans(df, cols):
+              new_df = df # copy df
+              for c in cols:
+                  str_ind = StringIndexer(inputCol=c, outputCol=c+'_num')
+                  transf_si = str_ind.fit(new_df)
+                  
+                  new_df = transf_si.transform(new_df).drop(c).withColumnRenamed(c+'_num', c)
+              return new_df
+          
+          
+          cat_col = ["workclass", "education","marital_status", "occupation", "relationship", "race", "sex",  "native_country", "income"]
+          
+          df_num = stringindex_trans(dfraw, cat_col)
+          ```
+  
+        * `OneHortEncoding `
+  
+          ```python
+          from pyspark.ml.feature import OneHotEncoder
+          
+          def onehotenc_trans(df, cols):
+              new_df = df
+              for c in cols:
+                  # dropLast : Whether to drop the last category in the encoded vector (default: true)
+                  one_hot = OneHotEncoder(inputCol=c, outputCol=c+'_onehot', dropLast=False)
+                  transf_ohe = one_hot.fit(new_df)
+          
+                  new_df = transf_ohe.transform(new_df).drop(c).withColumnRenamed(c+'_onehot', c)
+              return new_df
+          
+          
+          onehot_col = ["workclass", "education", "marital_status", "occupation", "relationship", "race",  "native_country"]
+          
+          df_onehot = onehotenc_trans(df_num, onehot_col)
+          ```
+  
+        * `VectorAssembler`
+  
+          ```python
+          # Merging the data with Vector Assembler.
+          from pyspark.ml.feature import VectorAssembler
+          input_cols=["age","capital_gain","capital_loss","fnlwgt","hours_per_week","sex","workclass","education","marital_status","occupation","relationship","native_country","race"]
+          
+          v_ass = VectorAssembler(outputCol='features', inputCols=input_cols)
+          
+          labeled_df = v_ass.transform(df_onehot).selectExpr('features','income label')
+          ```
+  
+    * step2: ML algorithm
+  
+      * train val split`Split(0.8, 0.2)`
+  
+        ```python
+        splits = labeled_df.randomSplit([0.8, 0.2])
+        
+        adulttrain = splits[0].cache()
+        adultvalid = splits[1].cache()
+        
+        adulttrain.write.saveAsTable("adulttrain")
+        adultvalid.write.saveAsTable("adultvalid")
+        ```
+  
+    * step3: Hyperparameter
+  
+    * Step4: evaluate the model
+  
+  * Decision Tree
+  
+  * Random Forest
+  
+  * K-Mean Clustering
