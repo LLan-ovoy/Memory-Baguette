@@ -913,7 +913,7 @@ from torch.utils.data import Dataset, DataLoader
 
   - steps:
 
-    ![gradientboost](image/msegb.png)
+    ![gradientboost](image/msegb.png)
 
     - Round1
       - take **mean** of y: minimize the MSE
@@ -945,7 +945,7 @@ from torch.utils.data import Dataset, DataLoader
 
   - Round 2
 
-    - find best split of x = x, **y = sign(SE), this is a classification**:
+    - find best split of x = x, **y = sign(SE), this is a still a regression**:
       - compute the MSE the two side of a split
     - random split x, and  predcit 
 
@@ -956,8 +956,8 @@ from torch.utils.data import Dataset, DataLoader
     >for m = 1 to M:
     >
     >* $r_i = sign(y^{(i)} - f_{m-1}(x^{(i)}))\ for \ i =1,2,...,N$
-    >* Fit a classification tree to the targets $r_i$ giving terminal regions $R_{jm} = 1,.., J_m$
-    >* in each $R_{jm}$, $β_{jm} = median_{x^{(i)}\in R_{jm}}\{y^{(i)} - f_{m-1}(x^{(i)}\}+ β_{jm}$
+    >* Fit a regression tree to the targets $r_i$ giving terminal regions $R_{jm} = 1,.., J_m$
+    >* in each $R_{jm}$, $β_{jm} = median_{x^{(i)}\in R_{jm}}\{y^{(i)} - f_{m-1}(x^{(i)})\}$
     >* Update $f_m(x) = f_{m-1}(x) + \sumβ_{jm}\mathbb{1}_{[x^{(i)} \in R_{jm}]}$
     >* next tree
     >
@@ -993,7 +993,7 @@ from torch.utils.data import Dataset, DataLoader
     >   \end{align*}$
     >* fit a regression tree on $r_i$
     >
-    >*  $\beta &= argmin_{\beta} \sum_{x^{(i)} \in R} L(y^{(i)}, f_{m-1}(x^{(i)}+\beta))\\$
+    >*  $\beta= argmin_{\beta} \sum_{x^{(i)} \in R} L(y^{(i)}, f_{m-1}(x^{(i)}+\beta))\\$
     >* Update $f_m(x) = f_{m-1}(x) + \sumβ_{jm}\mathbb{1}_{[x^{(i)} \in R_{jm}]}$
     >* next tree
     >
@@ -1196,15 +1196,562 @@ from torch.utils.data import Dataset, DataLoader
 
 
 
+# day 10
+
+- Intro to Natural Language Processing
+
+  - Text classification example
+
+    - problems: how to get features from a ducument,
+
+    - Example of quora question pairs: whether they are the same question
+
+      - some features:
+
+        - Length; difference of length; character length；common words
+
+        - Levenshtein distance features: 
+
+          > **String metric**, the minimum number of single-character edits (insertions, deletions or substitutions) required to change one word into the other.
+
+        - TF-IDF and SVD Features, directly put into ML model
+
+        - word2vector features: 
+
+          - for non-stop words, 
+
+          - > word mover’s distance provides the minimum distance needed to “move” a word from one document to another document, e.g. obama & president...
+
+          - minimum cumulative distance that all words in document 1 need to travel to exactly match document 2.
+
+        - other features
+
+          - Similarity measures on bag of character n-grams (TFIDF reweighted or not) from 1 to 8 grams.
+          - Edit and sequence matching distances, percentage of common tokens up to 1, 2, ..., 6 when question ends the same, or starts the same
+          - Length of questions, diff of length
+          - Number of capital letters, question marks etc...
+          - Indicators for Question 1/2 starting with "Are", "Can", "How" etc... and all mathematical engineering corresponding
+
+  - NLP pipeline
+
+    - Tokenization: chop text into pieces, with spacy
+
+      > build a vocabulary that will be used to determine the inputs for the model representing the features
+
+      - subword tokenization
+
+        > want a tokenization scheme that deals with an infinite potential vocabulary via a finite list of known words.
+        >
+        > Character-level tokenization can lose some meaning and semantic niceties of the word level
+
+      - common words - whole, rarer words - smaller chunks:
+
+        - “**unfortunately**” =“**un” + “for” + “tun” + “ate” + “ly”**. Subword tokenisation will break the text into chunks based on the word frequency.
+
+      - Byte Pair Encoding (BPE)  for subword tokenization, Used by BERT
+
+        - > BPE: **Goal**: find a way to represent your entire text dataset with the **least** amount of tokens
+          >
+          > - List all tokens in order from long tokens to short tokens;
+          >
+          > - Iterate through all the tokens and check if each token is a
+          >
+          >   substring of the word
+          >
+          >   * If so, that token is one of the tokens in the word.
+          >
+          > - Replace the remaining subwords to the unknown token.
+
+        - ​	e.g. `aaabdaaabac`=>`XdXac, X=ZY, Y=ab, Z=aa`
+
+    - Computing a vocabulary after tokenization
+
+      - train: Word frequency > 5 keep, and <5 to `<UNK>`
+      - test: map out of vocabulary words to “UNK”
+
+    - Lemmatization, Stemming
+
+      > take individual tokens from a sentence and we try to reduce them to their **base** form.
+      >
+      > - Normalizing text for text classification tasks or search engines
+      > - Important when dealing with complex languages like Arabic and Spanish.
+
+    - Sentence Segmentation
+
+      - !, ? are relatively unambiguous
+
+      - Period “.” is quite ambiguous: Sentence, Abbreviations, number
+
+      - Build a binary classifier: 
+
+        > - Looks at a “.” Decides End Of Sentence/Not End Of Sentence
+        > - Classifiers: hand-written rules,regular expressions,or machine learning
+        >   - Case of word before “.”: Upper, Lower, Cap, Number
+        >   - Case of word after “.”: Upper, Lower, Cap, Number
+        >   - Numeric features
+        >     - Length of word before “.”
+        >     - Probability that word before “.” occurs at the end of sentence
+        >     - Probability that word after “.” occurs at the beginning of sentence
+
+      - Cleaning text (this may be problem specific)
+
+        - Fix spelling
+        - Remove punctuation or not
+        - Lower case
+        - Remove stopwords (very frequent words)
+
+  - Linguistic features: 
+
+    - part of speech tagging
+
+      >Determine the part of speech (POS) tag for a particular instance of a word. can with spacy
+      >
+      >* Words often have more than one POS: back noun, adv, verb....
+
+    - Named Entity Recognition (NER)
+
+      > Find and classify names in text http://spark-public.s3.amazonaws.com/nlp/slides/Information_Extraction_and_Named_Entity_Recognition_v2.pdf
+      >
+      > * Named entities can be indexed, linked off
+      > * Sentiment can be attributed to companies products
+      > * For question answering, answers are often named entities
+
+      - e.g. Classify each word into 4 classes: person, location, organization, none
+
+        - x = 5 consecutive words, y = the label of the middle word
+
+          First 3 observations
+
+          ```python
+          x = ['IL-2', 'gene', 'expression', 'and','NF-kappa'], y = 'O'
+          x = ['gene', 'expression', 'and','NF-kappa', 'B'], y = 'O'
+          x = ['expression', 'and','NF-kappa', 'B', 'activation'], y = 'B-protein'
+          ```
+
+        - idea
+
+          > 1. Create and embedding layer and a linear layer
+          >
+          > 2. Look up the embedding of each word (5 words)
+          >
+          > 3. Concatenate the embeddings giving a 5*emb_size
+          >
+          >    vector
+          >
+          > 4. Take the 5*emb_size vector through one linear layer
+          >
+          > 5. out = model(x) (before softmax)
+          >
+          >    loss = F.cross_entropy(out, y)
+
+        - other tips 
+
+          - The embedding layer takes as input the index of the element in the embedding you want to select and return the corresponding embedding
+            - Embedding layer wants inputs of type LongTensor
+            - x.long() works if x is a tensor of floats
+
+    - Dependency Parsing
+
+      - Dependency structure shows which words depend on (modify or are arguments of) which other words.
+
+- Examples classical NLP
+
+  - Sentiment analysis
+
+    - tag manually
+
+    - features https://www.cs.cornell.edu/home/llee/papers/sentiment.pdf
+
+      - Negation: tag NOT to every word between a negation word(“not”, “isn’t”,
+
+        “didn’t”, etc.)
+
+      - Unigrams/words appearing at least 4 times
+
+      - Bigrams occurring at least 7 times
+
+      - Feature presence does better than frequency
+
+      - Attaching part of speech (POS) to every word
+
+      - Using just adjectives
+
+      - Position in document: First quarter, last quarter, or middle of document
+
+  - Reading comprehension
+
+    - reading a passage, fill in the blank of a sentence
+
+      - given a (passage, question, answer) triple (p, q, a), p = {p1,..., pm}, q = {q1,..., al}, fill in the place holder
+      - feature vector x\_{p,q,e}, we need to learn a weight for $x_{p,q,answer}*\theta > x_{p,q,entity}*\theta$ for all e in the paragraph
+
+      * how to rank?
+        * Transform rank problem into a pairwise classification/ regression problem
+        * we want $x_{p,q,answer}*\theta > x_{p,q,entity}*\theta$ 
+        * $P_{a,e} = sigmoid(x_{p,q,answer}*\theta - x_{p,q,entity}*\theta )$
+        * use binary cross_entropy loss with $y_{a,e}=1\ or\ 0 $
+      * Features for Entity Centric Classifier
+        * Entity in passage? e in question?
+        * frequency of e, the first position of e
+        * n-gram:  https://arxiv.org/abs/1606.02858
+        * word distance: 
+        * sentence co-occurrence: entity or verb
+        * dependency parse match
+
+- text classification problems:
+
+  - how to get features from a ducument,
+
+    - documents on the same tranining set have a different nunmber of words
+    - most classifier has a fixed number of features
+
+  - Solution:
+
+    - So far the solutions has been to make features from text and feed them into a classifier
+
+    - window based features
+
+      > classify a word in its context window of neighboring words
+      >
+      > e.g. museums in Paris are amazing => x = [e_museum, e_in, e_paris, e_are, e_amazing], y=Location(the attribute of middle word 'Paris')
+
+    - Continuous bag-of-words model (CBOW)
+
+      - Word vectors can be either trained or pre-trained can be used
+
+        - If pre-trained are used this is equivalent to apply logistic regression to the sum or average of word vectors
+
+        - Great baseline model, Add multiple linear layers followed by activations
+
+        - Deeper layers allow for learning feature combinations: Feature 1 AND feature 2
+
+          - E.g. capture “not” AND “hate”, BUT cannot handle “not hate”, CBOW input **forgets** the order of the words in the sentence
+
+          > Neural Bag of n-grams: 
+          >
+          > - Similar to CBOW model but with n-grams, 
+          > - Allow us to capture combination of features like  “Don’t love” and “Not the best”
+          > - No sharing between similar words / n-grams, “quite good” and “very good” are independent vectors
+          > - Lose the global sequence order
+          > - Large vocabulary (too many n-grams)
+
+      - Other points
+
+        - Summing or averaging embeddings for each word in a sentence
+        - discard order of words
+        - include or exclude stopwords
+        - include other operation such as min or max
+        - Use pre-trained embeddings
+        - Version: weighted average where the weights are TF-IDf scores
+        - Can improve effectiveness by putting output through 1+ fully connected layers
+        - Surprisingly effective for many tasks
 
 
 
+## cbow lab
+
+* pretrained embedding: save all the words
+
+  * delete infrequent < 5
+  * Padding: encoding=0, for padding at the first 1
+    *  unkown=1
+    * other words 1:n
+
+* sentense encoding:
+
+  * 95% sentence < 43, then set the max sequence len to N=40
+  * returns the index of the word or the index of "UNK" otherwise
+  * if less than 40, take padding 0
+  * when caculating need to deal with padding 0, so need to keep a record of the length of sentence
+
+* embedding layer
+
+  ```python
+  # containing 10 words with embedding size 4
+  embed = nn.Embedding(10, 4, padding_idx=0)
+  embed.weight # innitial random
+  ```
+
+  * padding is zeros
+
+    ```
+    a = torch.LongTensor([[1,4,1,5,1,0]])
+    embed(a)
+    
+    tensor([[[-0.4693, -0.0340, -0.4917, -0.2921],
+             [-0.9398,  2.1690, -0.6302,  1.5879],
+             [-0.4693, -0.0340, -0.4917, -0.2921],
+             [-1.4928, -1.0337,  0.5152,  0.5287],
+             [-0.4693, -0.0340, -0.4917, -0.2921],
+             [ 0.0000,  0.0000,  0.0000,  0.0000]]], grad_fn=<EmbeddingBackward>)
+    ```
+
+  * small data example
+
+    ```python
+    a = torch.LongTensor([[1,4,1], [1,3,0]])
+    s = torch.FloatTensor([3, 2]) # here is the size of the vector
+    
+    embed(a).shape # torch.Size([2, 3, 4]), row, col, embsize
+    
+    embed(a)
+    tensor([[[-0.4693, -0.0340, -0.4917, -0.2921],
+             [-0.9398,  2.1690, -0.6302,  1.5879],
+             [-0.4693, -0.0340, -0.4917, -0.2921]],
+            [[-0.4693, -0.0340, -0.4917, -0.2921],
+             [-0.2286,  0.4492, -0.0050, -0.7076],
+             [ 0.0000,  0.0000,  0.0000,  0.0000]]'''padding''' ], grad_fn=<EmbeddingBackward>)
+    
+    sum_embs = embed(a).sum(dim=1) # sum over each sentence
+    sum_embs/s.view(s.shape[0], 1) # devide by the #words s.view(s.shape[0], 1) is reshaping
+    ```
+
+* Write them into Continuous Bag of Words Model
+
+  * ```python
+    class CBOW(nn.Module):
+        def __init__(self, vocab_size, emb_size=100):
+            super(CBOW, self).__init__()
+            self.word_emb = nn.Embedding(vocab_size, emb_size, padding_idx=0)
+            self.linear = nn.Linear(emb_size, 1)
+            
+        def forward(self, x, s):
+            x = self.word_emb(x)
+            x = x.sum(dim=1)/ s
+            x = self.linear(x)
+            return x
+          
+    model = CBOW(vocab_size=5, emb_size=3)      
+    ```
+
+  * ```python
+    x_train_len = np.array([len(x.split()) for x in X_train])
+    x_val_len = np.array([len(x.split()) for x in X_val])
+    
+    def train_epocs(model, epochs=10, lr=0.01):
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        for i in range(epochs):
+            model.train()
+            x = torch.LongTensor(x_train) 
+            y = torch.Tensor(y_train).unsqueeze(1)
+            s = torch.Tensor(x_train_len).view(x_train_len.shape[0], 1)
+            y_hat = model(x, s)
+            loss = F.binary_cross_entropy_with_logits(y_hat, y)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            val_loss, val_accuracy = val_metrics(model)
+            print("train_loss %.3f val_loss %.3f val_accuracy %.3f" % 
+                  (loss.item(), val_loss, val_accuracy))
+    ```
 
 
 
+# word embeddings
+
+**Outline**
+
+- Word Representation
+
+  - how to represent meaning?
+
+    - Common solution: Use e.g. WordNet, a thesaurus containing lists of synonym sets and hypernyms (“is a” relationships).
+
+      - Problems with WordNet
+        - Great as a resource but missing nuance
+        - e.g. “proficient” is listed as a synonym for “good”. This is only correct in some contexts.
+        - ●  Missing new meanings of words
+        - e.g. slang, impossible to keep up-to-date!
+        - Subjective, Requires human labor to create and adapt
+        - Can’t compute accurate word similarity
+
+    - Discrete word representations: one-hot-encoding
+
+      ```
+      motel = [0 0 0 0 0 0 0 0 0 0 1 0 0 0 0] 
+      hotel = [0 0 0 0 0 0 0 1 0 0 0 0 0 0 0] 
+      ```
+
+      * Vector dimension = number of words in vocabulary (e.g., 500,000 or 13 Million)
+      * Problem:
+        * not for n-gram like  “Miami motel”, But these two vectors 'miami' and 'motel' are orthogonal
+        * There is no natural notion of similarity for one-hot vectors!
+        * Solutions:
+          - Could try to rely on WordNet’s list of synonyms to get similarity, But it is well-known to fail badly: incompleteness, etc.
+          - Instead: learn to encode similarity in the vectors themselves. A dot product will give use the similarity between words
+
+    - Representing words by their context
+
+      - You can get a lot of value by representing a word by means of its neighbors
+      - One of the most successful ideas of modern NLP
+      - **Distributional Hypothesis** states that words that appear in the same contexts share semantic meaning.
+      - Idea: take the 5 words around a given word to represent the given word
+
+- Using word embeddings
+
+  - We will build a dense vector for each word, chosen so that it is similar to vectors of words that appear in similar contexts
+    - The size of vector (50 -1000) e.g. 300.
+
+- Training word embeddings
+
+  - Language modelling task = assign a probability to any sequence of words.
+
+    - Crucial component of real word applications
+      - Machine translation: generate many but pick the highest probability
+      - Automatic speech recognition
+
+  - Neural language model 
+
+    -  Can be used to train word representations
+    - Given **K** word what is the probability of the **K+1**st word, “Window” model
+
+  - Word2vec **(Skip-gram)**, Naive PyTorch
+
+    > The training objective is to learn word vector representations that are good at predicting the nearby words.
+    >
+    > - We have a large corpus of text
+    > - Every word in a fixed vocabulary is represented by a vector
+    > - Go through each position **t** in the text, which has a center word **x** and context (“outside”) words **y**
+    > - Use a simple model that given **x** predicts **y**
+
+    - negative sampling
+      - Take **center** word and **output** word as “a positive sample”
+      - Take **center** word and **random** word as “a negative sample”
+      - Take **K** negative samples per each positive sample
+      - Solve a binary classification problem
+
+  - Glove: Simplify word2vec
+
+    - Instead of sampling same pairs of words multiple times compute a co-occurrence matrix
+      - X_ij = be the number of times a word i appears in the context of word j
+
+    * Visualization
+      * t-SNE: a nonlinear nondeterministic algorithm that tries to preserve local neighborhoods in the data, often at the expense of distorting global structure.
+      * One can perform “algebra” on word vectors and get meaningful results
 
 
 
+# day12
+
+train word embedding
+
+```python
+from collections import defaultdict
+def get_vocab(content):
+    """Computes Dict of counts of words.
+    
+    Computes the number of times a word is on a document.
+    """
+    vocab = defaultdict(float)
+    for line in content:
+        words = set(line.split())
+        for word in words:
+            vocab[word] += 1
+    return vocab      
+    
+    
+def get_vocab_from_word_count(word_count):
+    for word in list(word_count):
+        if word_count[word] < 5:
+            del word_count[word]
+        
+    vocab2index = {"UNK": 0}
+    words = ["UNK"]
+    for word in word_count:
+        vocab2index[word] = len(words)
+        words.append(word)
+    return vocab2index, words
+    
+vocab2index, words = get_vocab_from_word_count(word_count)
+```
+
+```python
+class LanguageModelDataset(Dataset):
+    def __init__(self, text, vocab2index, K=3):
+        tokens = np.concatenate([x.split() for x in text])
+        self.text = np.array([ vocab2index.get(x, 0) for x in tokens])
+        self.K = K
+    
+    def __len__(self):
+        return len(self.text) - self.K
+    
+    def __getitem__(self, idx):
+        return self.text[idx:idx+self.K], self.text[idx+self.K]
+  
+  
+class NeuralModel(nn.Module):
+    def __init__(self, vocab_size, emb_size=50, K=3, M=100):
+        """Initialize an embedding layer and a linear layer
+        """
+        super(NeuralModel, self).__init__()
+        self.emb = nn.Embedding(vocab_size, emb_size)
+        self.linear1 = nn.Linear(K*emb_size, M)
+        self.linear2 = nn.Linear(M, vocab_size)
+        
+    def forward(self, x):
+        x = self.emb(x)
+        x = x.flatten(1)
+        x = F.relu(self.linear1(x))
+        return self.linear2(x)
+```
 
 
 
+* exponential loss `math.exp(train_loss)`
+
+* Model(x).shape = 1000,20000(vacab_size, multiclasss)
+
+* ```python
+  def update_learning_rate(ptimizer, lr):
+  	for g in optimizer.param_groups:
+  		g['lr'] = lr
+  ```
+
+* sampling
+
+  * I like deep leanring
+
+    ```
+    y is 2 neighbors from x left and right
+    x = I, y = like or y = deep by sampling
+    x = like, y = I
+    x = deep, y = I
+    x = learning, y = like
+    ```
+
+  * negative sampling
+
+    ```
+    x1 = I, x2 = deep, y = 1 => sigmoid(e_i * e_deep) = 1 postive
+    
+    pos_neg+_rate = 3
+    x1 = I, x2 = random_from_training_not_just_vocab, y = 0 => negative
+    x1 = I, x2 = dog, y = 0 => negative
+    x1 = I, x2 = banana, y = 0 => negative
+    
+    x1 = Like, x2 = I, y = 1 => postive
+    
+    pos_neg+_rate = 3
+    x1 = Like, x2 = trip, y = 0 => negative
+    x1 = Like, x2 = book, y = 0 => negative
+    x1 = Like, x2 = nothing, y = 0 => negative
+    
+    ```
+
+  * ```python
+    def init():
+    	self.text = [1,2,3,...])
+    def len():
+    	return 4*len(self.text)
+    def getitems(idx): # len(idx) = len() = 4*text
+    	c = idx//4  # if ind = 0, c = 0
+    	if idx//4 == 0: # positive
+    		return generate_positive(c) # is a pair, [x,y]
+    	else:
+    		return generate_negative(c)
+      
+    ```
+    
+  * 
+  
+  

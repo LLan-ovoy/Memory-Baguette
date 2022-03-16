@@ -925,10 +925,20 @@
         	if s[i] not in p.edges:
         		p.edges[s[i]] = TrieNode() 
           add(p.edges[s[i]], s, i+1)
+          
+          
+        
+        {a:{p:{p:{l:{e:{}}},e:{}}}}
+        
+        apple
+        appe
+        |
+          
+        nodes have no values  
         ```
-
+        
         * two words “**ape**” and “**apex**”?
-
+        
           ```python
           class TrieNode:
           	def __init__(self):
@@ -953,13 +963,234 @@
           		i += 1
           	return True    
           ```
-
+        
         * **Exercise**: find all words starting with prefix
-
+        
         * **Exercise**: How to build a suffix tree?
-
+        
         * **Exercise**: Given misspelled words off by 1 letter only, find all possible words
-
+  
   * state machines O(m)
 
-* * 
+## Graph
+
+*  all about relationships: conected element pairs
+  * nodes/edges
+  * terms
+  * directed
+  * number directed edges is [0, n^2]; if no self cycle[0, n(n-1)]
+
+* Undirected: cycle, edge, vertex, vertex of degree 3, path of length 4, connceted component
+
+* Common questions
+
+  * Is q reachable from p?
+  * How many edges are on paths between p and q?
+  * Is graph connected? (reach any p from any q)
+  * Is graph cyclic? (p reaches p traversing at least one edge)
+  * Which nodes are within k edges of node p? (neighborhood)
+  * What is shortest path (num edges) from p to q
+  * What is shortest path using edge weights? [beyond scope of 689] 
+  * Traveling salesman problem [beyond scope of 689]
+
+* structure implementations
+
+  * Adjacency matrix implementations: sparse
+
+    * undirected matrices are symmetric
+    * waste space for sparse edges => use sparse matrix
+    * fast to access arbitrary node's edge
+
+  * Adjacency list 
+
+    * space efficient
+
+  * Connected nodes
+
+    ```python
+    class Node:
+      def __init__(self, value):
+          self.value = value
+    		  self.edges = []
+      def edge(self, target:Node):
+     			self.edges.append(target)
+    ```
+
+    * common
+    * info of node and edge
+    * list or dict index to access
+
+    ```python
+    # Labeled node/ value
+    class LNode:
+      def __init__(self, value):
+        self.value = value
+        self.edges = {}
+      def edge(self, label, target:node):
+      	self.edges[label] = target
+    ```
+
+* Depth-first search
+
+  ```python
+  def walk_graph(p:Node, visited=set()): 
+    if p in visited: 
+      return 
+    visited.add(p) #record the ones visited
+  	for q in p.edges:
+  		walk_graph(q, visited)
+  ```
+
+  * O(n,m) = n + m, for n nodes, m edges; m can be n^2, since m in [1, n^2]
+
+  * Visits all reachable nodes from p, avoiding cycles
+
+  * go deep first, go to the child down hill
+
+  * check is there any cycle?
+
+    ```python
+    def iscyclic(p:Node) -> bool: 
+      return iscyclic_(p,p,set())
+    def iscyclic_(start:Node, p:Node, visited) -> bool: 
+      if p in visited:
+    		if p is start: 
+          return True # we find start?
+    		return False # can't loop forever so stop
+    		visited.add(p) 
+        for q in p.edges:
+    			c = iscyclic_(start, q, visited)
+    			if c: return True # found it, we can stop 
+        return False # this false is out loop, if finally false, then false
+    ```
+
+  * find set of nodes p can reach
+
+    ```python
+    def reachable(p:Node) -> set:
+        reaches = set();
+        reachable_(p, reaches, set())
+        return reaches
+    def reachable_(p:Node, reaches:set, visited:set):
+        if p in visited: return
+        visited.add(p)
+        for q in p.edges:
+            reaches.add(q) # add only if we traverse
+            reachable_(q, reaches, visited)
+    ```
+
+  * track depth
+
+    ```python
+    def depths(p:Node) -> dict: 
+      reaches = {}
+    	depths_(p, reaches, depth=0) 
+      return reaches
+    
+    
+    def depths_(p:Node, reaches:dict, depth:int):
+    	if p in reaches: return
+    	reaches[p] = depth # distance to p from start (could be 0) 
+      for q in p.edges:
+    		depths_(q, reaches, visited, depth+1)
+        
+        
+    {1:0, 3:1, 2:1, 4:2}    
+    k = 1
+    {'a':0, c:1, b:1}
+    ```
+
+  * trace path
+
+    ```python
+    def path(p:Node, q:Node) -> list: 
+      return path_(p, q, [p], set())
+    def path_(p:Node, q:Node, path:list, visited:set): 
+      if p is q: 
+        return path # found q!
+    	if p in visited: 
+        return None # avoid cycles 
+      visited.add(p)
+    	for e in p.edges:
+    		pa = path_(e, q, path+[e], visited) 
+        if pa is not None: 
+          return pa
+    	return None
+    # we want to get to D, but we go ABCA first, so in ADB it will stop in B 'cause B is in visited
+    ```
+
+* Breadth-first search 
+
+  * Visit all children then grandchildren...
+
+    ```python
+    def BFS(root:LNode): 
+    	visited = {root} 
+    	worklist = [root] 
+    	while len(worklist)>0:
+    		p = worklist.pop(0) # dequeue 
+        print(f“Visit {p}”)
+    		for q in p.edges:
+    			if q not in visited: 			
+            worklist.append(q) 			
+            visited.add(q)
+    ```
+
+  * find shortest path
+
+    ```python
+    def shortest(root:Node, target:Node): 	
+      visited = {root}
+      worklist = [[root]] # list of paths 
+      while len(worklist)>0:
+    		path = worklist.pop(0)
+    		p = path[-1] # tail of path 
+        if p is target: return path 
+        for q in p.edges:
+          if q not in visited: 		
+            worklist.append(path+[q]) 
+            visited.add(q)
+    ```
+
+* Topological sort (acyclic graphs)
+
+  * Find linear ordering of nodes in directed acyclic graph
+
+    * u -> v <=> v precede u: just different way to interprete the situation
+    * Depth first, post order
+
+  * ```python
+    def postorder(p:Node, sorted:list, visited:set): 
+    	if p in visited: return
+    	visited.add(p)
+    	for q in p.edges:
+    		postorder(q, sorted, visited)
+    	sorted.append(p) # postorder done after kids
+    ```
+
+  * ```
+    # nodes is dict edge list mapping from->to def toposort(nodes:dict):
+    sorted = []
+    visited = set()
+    while len(visited) < len(nodes):
+    todo = [node for node in nodes.values() if node not in visited]
+    if len(todo)>0:
+    postorder(todo[0], sorted, visited)
+    return reverse(sorted)
+    ```
+
+* Summary
+
+  - Graphs are for showing relationships between elements
+  - DFS for finding a path or multiple paths or cycles (recursive backtracking to find all nodes)
+  - BFS for find shortest (in edges) path or neighborhood
+  - DFS postorder great for topo sort
+  - Recursive alg’s all use **visited** set or similar to avoid cycles
+  - Non-recursive DFS: (use work list stack)
+    - push targets in reverse order  onto work list
+    - pop last work list item for next node to process
+  - Non-recursive BFS: (use work list queue) 
+    - push targets in order onto work list
+    - pull from first position
+
+* Exericise

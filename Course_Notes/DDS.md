@@ -961,12 +961,6 @@ DF.join(dataframe, condition, join_type)
 
 
 
-
-
-
-
-
-
 * Registering DataFrame in the Table Catalog
 
   * save as table
@@ -986,15 +980,18 @@ DF.join(dataframe, condition, join_type)
 
   * To specific directory instead of current path
 
+    * Register a table **permanently (in a parquet format)**.
+    
     ```sql
     DF.write.option("path", "/spark-warehouse/business").saveAsTable(name)
     
     ss.sql("SELECT * FROM parquet.`/spark-warehouse/business`").show(5)
     -- "`" not "'"
     ```
-
+    
     * Spark will write data to a default table path. When the table is dropped, the default table path will be removed too.
-    * Parquet : Column-oriented data storage format ; Efficient compression and encoding scheme.
+    * The table definitions will survive your application’s restarts and are persistent.
+      * Parquet : Column-oriented data storage format ; Efficient compression and encoding scheme.
 
 * Loading/Writing Data using SparkSQL
 
@@ -1009,9 +1006,9 @@ DF.join(dataframe, condition, join_type)
       world_bank_prj.write.json('world_bank_project')
       ```
 
-      * look through all the field and create a data frame, it is autoinfering the schema, cannot assign schema
+      * look through all the field and create a data frame, it is autoinfering the schema, **cannot assign schema**
 
-    * CSV
+    * CSV： **coalesce**
 
       ```sql
       business_df = ss.read.csv('../Data/SF_business/filtered_registered_business_sf.csv')
@@ -1022,7 +1019,7 @@ DF.join(dataframe, condition, join_type)
       -- coalesce minimizes the data shuffle, while repartition is more
       ```
 
-    * Parquet
+    * Parquet： **only directory** 
 
       ```sql
       supervisor_df = ss.read.parquet('/Users/caoyanan/Desktop/USF/697_distributed_datasys/msds697_distributed_data_systems_2022/Day8/spark-warehouse/supervisor')
@@ -1037,11 +1034,11 @@ DF.join(dataframe, condition, join_type)
 
     * S3
 
-      * s3a: Hadoop’s client which offers high-performance IO against Amazon S3 object store.
+      * **s3a**: Hadoop’s client which offers high-performance IO against Amazon S3 object store.
 
       * configuration
 
-        * JAR files - add aws-java-sdk-bundle and hadoop-aws jars
+        * **JAR files** - add aws-java-sdk-bundle and hadoop-aws jars - **version**
 
           ```sql
           ss = SparkSession.builder.config("spark.jars.packages", "com.amazonaws:aws-java-sdk-bundle:1.11.901,org.apache.hadoop:hadoop-aws:3.3.1").getOrCreate()
@@ -1087,7 +1084,7 @@ DF.join(dataframe, condition, join_type)
         
         df.write.format("com.mongodb.spark.sql.DefaultSource")\ -- write to output uri
                 .mode("overwrite")\
-                .option(“database","db_name")\
+                .option("database","db_name")\
                 .option("collection", "collection_name")\
                 .save()
         ```
@@ -1110,20 +1107,18 @@ DF.na.fill(0, ['count'])
 
     * 3 ML component
 
-      * Estimators (ML algorithm itself): return a transformer
+      * Estimators (ML algorithm itself): Algorithms that produce transformers by fitting on a dataset., return a transformer
       * Fransformers: return transformed data
         * feature transformer: return new columns like feature vectors
-        * learning model: return predicted label
-  
-      * Evaluators: metrics
-  
+        * learning model: return with predicted label
+    * Evaluators: metrics
     * 2 architecture 
   
       * ML parameters: hyper parameter
         * `ParamGridBuilder()` to select in the set of parameter in `CrossValidator()` => return the best model among the hyperparameters
       * ML pipeline
         * string indexer: we want `cat.code without order`, to remove order use `one-hot encoding`
-  
+    
   * Algorithms
   
     > * Feature  Extractors, Transformers, Selector and Locality Sensitive Hashing.
@@ -1232,7 +1227,7 @@ DF.na.fill(0, ['count'])
   
       * categorical string: 
   
-        * `StringIndexerModel() `: string categorical values into integer indexes
+        * `StringIndexerModel() `: string categorical values into integer indexes. algorithm is estimator, it creates a transformer
   
           ```python
           #converting strings to numeric values
@@ -1274,7 +1269,7 @@ DF.na.fill(0, ['count'])
           df_onehot = onehotenc_trans(df_num, onehot_col)
           ```
   
-        * `VectorAssembler`
+        * `VectorAssembler`: transformer
   
           ```python
           # Merging the data with Vector Assembler.
@@ -1300,12 +1295,436 @@ DF.na.fill(0, ['count'])
         adultvalid.write.saveAsTable("adultvalid")
         ```
   
+      * model: algorithm is just a estimator, it create a transformer (data in data with prediction out)
+  
+        ```python
+        from pyspark.ml.classification import LogisticRegression
+        
+        lr = LogisticRegression(regParam=0.01, maxIter=1000, fitIntercept=True)# now is just an estimator
+        lrmodel = lr.fit(adulttrain) # after fitting, it is a transformer now
+        
+        validpredicts = lrmodel.transform(adultvalid) # transformer returns a data frame
+        validpredicts.show()
+        ```
+        
+        * return df with `probability` and `predict`
+  
     * step3: Hyperparameter
   
+      * cross validation
+  
+        ```python
+        from pyspark.ml.tuning import CrossValidator
+        from pyspark.ml.tuning import ParamGridBuilder
+        cv = CrossValidator().setEstimator(lr).setEvaluator(bceval).setNumFolds(5)
+        
+        #ParamGridBuilder() – combinations of parameters and their values.
+        paramGrid = ParamGridBuilder().addGrid(lr.maxIter, [1000]).addGrid(lr.regParam, [0.0001, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5]).build()
+        
+        #setEstimatorParamMaps() takes ParamGridBuilder().
+        cv.setEstimatorParamMaps(paramGrid)
+        cvmodel = cv.fit(adulttrain)
+        
+        BinaryClassificationEvaluator().setMetricName("areaUnderPR").evaluate(cvmodel.bestModel.transform(adultvalid))
+        ```
+  
+        
+  
     * Step4: evaluate the model
+  
+      ```python
+      #Evaluate the model. default metric : Area Under ROC
+      from pyspark.ml.evaluation import BinaryClassificationEvaluator
+      bceval = BinaryClassificationEvaluator().setMetricName('f1')
+      print (bceval.getMetricName() +":" + str(bceval.evaluate(validpredicts)))
+      
+      #Evaluate the model. metric : Area Under PR
+      bceval.setMetricName("areaUnderPR")
+      print (bceval.getMetricName() +":" + str(bceval.evaluate(validpredicts)))
+      ```
+  
+  * Pipeline: 
+  
+    ```python
+    va = VectorAssembler(inputCols=dfpen.columns[:-1], outputCol="features") 
+    dt = DecisionTreeClassifier()
+    
+    pipeline = Pipeline(stages=[va,dt])
+    ```
   
   * Decision Tree
   
   * Random Forest
   
   * K-Mean Clustering
+
+# Part ?
+
+* H2O and Sparkling Water 
+  * what? Fast, scalable, open-source machine learning and deep learning library
+    * Fast: in memory
+    * Scalable: spark(Local, Standalone, YARN)
+      * H2O services on each node of a Spark cluster, copy and compress data in to certain format
+    * ML libraries: linear reg, logistic reg, NaiveB..
+    * language: R, python, scala,
+
+* Sparkling Water Workflow
+
+  * Create H2OFrame 
+
+    ```sql
+    -- create from spark DataFrame
+    hc.asH2OFrame(dataframe, "name", ...)
+    
+    -- create from file
+    import h2o
+    h2oframe = h2o.import_file(path="path", ...)
+    h2oframe.set_names(["col_1", ... , "col_n"])
+    
+    -- convert to spark DataFrame
+    df = hc.asSparkFrame(h2o_frame)
+    ```
+
+    ```python
+    splitted_adult = adult_h2o.split_frame([0.8], seed=1)
+    adult_train_h2o = splitted_adult[0]
+    adult_valid_h2o =  splitted_adult[1]
+    
+    from h2o.automl import H2OAutoML
+    model_automl = H2OAutoML(max_models=10, max_runtime_secs=120, seed=1, nfolds=5)
+    
+    predictors = adult_train_h2o.names[:]
+    response = "income"
+    predictors.remove(response)
+    
+    model_automl.train(x=predictors, y=response, training_frame=adult_train_h2o)
+    ```
+
+    ```python
+    df.summary()
+    df.describe()
+    df.shape()
+    df.columns()
+    df.types()
+    df.columns_by_type(coltype='numeric')
+    df.set_name(col=index/name, name=new_name)
+    df.set_names(names)
+    df.split_frame(ratios=None,destination_frames=None)
+    df.asfactor()
+    df.ascharacter()
+    df.as_date(format)
+    df.asnumeric()
+    
+    ```
+
+    
+
+  * Apply ML Algorithms
+
+    * AutoML
+
+
+
+
+
+```python
+from pyspark.sql import SparkSession
+from pyspark.sql.types import *
+
+ss = SparkSession.builder.getOrCreate()
+sc = ss.sparkContext
+
+#load and convert the data
+census_raw = sc.textFile("../Data/adult.raw", 4)\		
+								.map(lambda x:  x.split(", "))
+census_raw = census_raw.map(lambda row: [toDoubleSafe(x) for x in row])
+
+from pyspark.sql.types import *
+adultschema = StructType([
+    StructField("age",DoubleType(),True),
+    StructField("workclass",StringType(),True),
+    StructField("fnlwgt",DoubleType(),True),
+    StructField("education",StringType(),True),
+    StructField("marital_status",StringType(),True),
+    StructField("occupation",StringType(),True),
+    StructField("relationship",StringType(),True),
+    StructField("race",StringType(),True),
+    StructField("sex",StringType(),True),
+    StructField("capital_gain",DoubleType(),True),
+    StructField("capital_loss",DoubleType(),True),
+    StructField("hours_per_week",DoubleType(),True),
+    StructField("native_country",StringType(),True),
+    StructField("income",StringType(),True)
+])
+
+dfraw = ss.createDataFrame(census_raw, adultschema)
+
+```
+
+```python
+# clear data
+
+#Check the most commonly used vals.
+dfraw.groupBy(dfraw["workclass"]).count()\
+		.orderBy("count",ascending=False).show()
+dfraw.groupBy(dfraw["occupation"]).count()\
+		.orderBy("count",ascending=False).show()
+dfraw.groupBy(dfraw["native_country"]).count()\
+		.orderBy("count",ascending=False).show()
+
+#Missing data imputation - Impute the most common row for "?".
+dfrawrp = dfraw.replace(["?"], ["Private"], ["workclass"])
+dfrawrpl = dfrawrp.replace(["?"], ["Prof-specialty"], ["occupation"])
+dfrawnona = dfrawrpl.replace(["?"], ["United-States"], ["native_country"])
+```
+
+```python
+# converting strings to numeric values
+from pyspark.ml.feature import StringIndexer
+
+def indexStringColumns(df, cols):
+    # variable newdf will be updated several times
+    newdf = df
+    
+    for c in cols:
+        # For each given colum, fits StringIndexerModel.
+        si = StringIndexer(inputCol=c, outputCol=c+"-num")
+        sm = si.fit(newdf)
+        
+        # Creates a DataFame by putting the transformed values in the new colum with suffix "-num" 
+        # and then drops the original columns.
+        # and drop the "-num" suffix. 
+        newdf = sm.transform(newdf).drop(c)
+        newdf = newdf.withColumnRenamed(c+"-num", c)
+    return newdf
+
+dfnumeric = indexStringColumns(dfrawnona, ["workclass", "education",
+                                           "marital_status", "occupation",
+                                           "relationship", "race", "sex", 
+                                           "native_country", "income"])
+```
+
+```python
+from pyspark.ml.feature import OneHotEncoder
+
+def oneHotEncodeColumns(df, cols):
+    newdf = df
+    for c in cols:
+        # For each given colum, create OneHotEncoder. 
+        # dropLast : Whether to drop the last category in the encoded vector (default: true)
+        ohe = OneHotEncoder(inputCol=c, outputCol=c+"-onehot", dropLast=False)
+        ohe_model = ohe.fit(newdf)
+        #Creates a DataFame by putting the transformed values in the new colum with suffix "-onehot" 
+        #and then drops the original columns.
+        #and drop the "-onehot" suffix. 
+        newdf = ohe_model.transform(newdf).drop(c)
+        newdf = newdf.withColumnRenamed(c+"-onehot", c)
+    return newdf
+
+dfhot = oneHotEncodeColumns(dfnumeric, ["workclass", "education", 
+                                        "marital_status", "occupation", 
+                                        "relationship", "race", "native_country"])        
+```
+
+```python
+# Merging the data with Vector Assembler.
+from pyspark.ml.feature import VectorAssembler
+input_cols=["age","capital_gain","capital_loss",
+            "fnlwgt","hours_per_week","sex",
+            "workclass","education","marital_status",
+            "occupation","relationship","native_country","race"]
+
+#VectorAssembler takes a number of collumn names(inputCols) and output column name (outputCol)
+#and transforms a DataFrame to assemble the values in inputCols into one single vector with outputCol.
+
+va = VectorAssembler(outputCol="features", 
+                     inputCols=input_cols)
+#lpoints - labeled data.
+lpoints = va.transform(dfhot)
+						.select("features", "income")
+  					.withColumnRenamed("income", "label")
+```
+
+```python
+# Fit the pipeline to training documents.
+from pyspark.ml import Pipeline
+pipeline = Pipeline(stages=[va,dt])
+```
+
+
+
+```python
+#Divide the dataset into training and vaildation sets.
+splits = lpoints.randomSplit([0.8, 0.2])
+
+#cache() : the algorithm is interative and training and data sets are going to be reused many times.
+adulttrain = splits[0].cache()
+adultvalid = splits[1].cache()
+```
+
+```python
+#Train the model.
+
+##### logistic regression #####
+from pyspark.ml.classification import LogisticRegression
+
+lr = LogisticRegression(regParam=0.01, 
+                        maxIter=1000, 
+                        fitIntercept=True)
+lrmodel = lr.fit(adulttrain)
+#The above lines are same as..
+#lr = LogisticRegression()
+#lrmodel = lr.setParams(regParam=0.01, maxIter=1000, fitIntercept=True).fit(adulttrain)
+
+#Interpret the model parameters
+print(lrmodel.coefficients)
+print(lrmodel.intercept)
+
+#Evaluate models using test dataset.
+#First, transform the validation set.
+validpredicts = lrmodel.transform(adultvalid)
+validpredicts.show()
+################################
+
+##### decision tree #####
+# Train the data.
+from pyspark.ml.classification import DecisionTreeClassifier
+# Paramenters
+# maxDepth : maximum tree depth (default : 5).
+# maxBins : maximum number of bins when binning continuous features (default : 32).
+# minInstancesPerNode : minimum number of dataset samples 
+#     each branch needs to have after a split (default : 1).
+# minInfoGain : minimum information gain for a split (default : 0).
+dt = DecisionTreeClassifier(maxDepth=20, maxBins= 32, minInstancesPerNode=1, minInfoGain = 0)
+dtmodel = dt.fit(pendttrain)
+print(dtmodel.toDebugString)
+dtpredicts = dtmodel.transform(pendtvalid)
+################################
+
+##### random forest #####
+# Train the model.
+from pyspark.ml.classification import RandomForestClassifier
+rf = RandomForestClassifier(maxDepth=20)
+rfmodel = rf.fit(pendttrain)
+print(rfmodel.toDebugString)
+rfpredicts = rfmodel.transform(pendtvalid)
+################################
+
+##### kmeans #####
+kmeans =  KMeans(k = 10, maxIter = 200, tol = 0.1) 
+# k = 10 as there are 10 different handwritten numbers.
+model = kmeans.fit(penlpoints)
+predictions = model.transform(penlpoints)
+centers = model.clusterCenters()
+print("Cluster Centers: ")
+for center in centers:
+    print(center)
+    
+from pyspark.ml.evaluation import ClusteringEvaluator
+evaluator = ClusteringEvaluator()
+silhouette = evaluator.evaluate(predictions)
+print("Silhouette with squared euclidean distance = " + str(silhouette))
+
+# prediction is a group, not an actual label.
+predictions.select('label', 'prediction')\
+           .groupBy('label', 'prediction')\
+           .count()\
+           .show(100)
+```
+
+```python
+#Evaluate the model. default metric : Area Under ROC
+####### Binary #######
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+
+bceval = BinaryClassificationEvaluator()
+print (bceval.getMetricName() +":" + 
+       str(bceval.evaluate(validpredicts)))
+
+#Evaluate the model. metric : Area Under PR
+bceval.setMetricName("areaUnderPR")
+print (bceval.getMetricName() +":" + 
+       str(bceval.evaluate(validpredicts)))
+
+####### multiclass #######
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+# expects two input columns: prediction and label.
+
+# f1|accuracy(defulat)|weightedPrecision|weightedRecall|
+# weightedTruePositiveRate| 
+# weightedFalsePositiveRate|weightedFMeasure|truePositiveRateByLabel| 
+# falsePositiveRateByLabel|precisionByLabel|recallByLabel|fMeasureByLabel| 
+# logLoss|hammingLoss
+metric_name = "f1"
+
+metrics = MulticlassClassificationEvaluator()\
+                .setLabelCol("label")\
+                .setPredictionCol("prediction")
+metrics.setMetricName(metric_name) 
+
+metrics.evaluate(dtpredicts)
+```
+
+```python
+from pyspark.ml.tuning import CrossValidator
+from pyspark.ml.tuning import ParamGridBuilder
+
+#cv = CrossValidator().setEstimator(lr)
+#											.setEvaluator(bceval)# what used for one time metric
+#  										.setNumFolds(5)
+
+#ParamGridBuilder() – combinations of parameters and their values.
+paramGrid = ParamGridBuilder().addGrid(lr.maxIter, [1000])\
+															.addGrid(lr.regParam, 
+                                       [0.0001, 0.001, 0.005, 
+                                        0.01, 0.05, 0.1, 0.5])\
+  														.build()
+    
+evaluator = MulticlassClassificationEvaluator()\
+                .setLabelCol("label")\
+                .setPredictionCol("prediction")
+    
+#setEstimatorParamMaps() takes ParamGridBuilder().
+cv = CrossValidator(estimator=dt, 
+                    evaluator=evaluator, 
+                    numFolds=5, 
+                    estimatorParamMaps=paramGrid)
+
+cvmodel = cv.fit(adulttrain)
+
+print(cvmodel.bestModel.coefficients)
+print(cvmodel.bestModel.intercept)
+print(cvmodel.bestModel.getMaxIter())
+print(cvmodel.bestModel.getRegParam(),
+      cvmodel.bestModel.getMaxDepth)
+
+dtpredicts = cvmodel.bestModel.transform(pendtvalid)
+
+```
+
+```python
+BinaryClassificationEvaluator().evaluate(
+												cvmodel.bestModel\
+												.transform(adultvalid))
+
+
+BinaryClassificationEvaluator().setMetricName("areaUnderPR")\
+															.evaluate(cvmodel.bestModel.\
+                                        transform(adultvalid))
+```
+
+```python
+from pyspark.mllib.evaluation import MulticlassMetrics
+
+#prediction and label
+prediction_label = dtpredicts.select("prediction", "label").rdd
+
+metrics = MulticlassMetrics(prediction_label)
+
+confusionMetrics = metrics.confusionMatrix()
+
+print("Confusion Metrics = \n%s" % confusionMetrics)
+```
+
+
+

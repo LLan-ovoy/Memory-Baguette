@@ -18,7 +18,8 @@ Unordered operation in Python: Set, no order, no index
 
 Logistic regression performs better on small dataset:
 
-* no assumption on distribution
-* data is linear seperable
+* no assumption on distribution: if data satisfied assumption, it will be faster to converge to the true result, larger data set, violated
+* data is linear seperable: is data is larger, then it is more easily to be violated
+* 
 
 * Related: Linear SVC
