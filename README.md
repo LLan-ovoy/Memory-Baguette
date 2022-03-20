@@ -41,20 +41,28 @@ This is a collection of blogs about data science. Productization of a machine le
 ### Introduction to Machine Learning
 
 * Gradient Descent
+  * Linear Model
+  * Matrix Factorization
+
 * Tree based methods
   * Decision Tree
   * Random Forest
   * Gradient Boosting
+* Clustering
+  * [Kmeans]()
 
 * Feature Importance
 
 ### Advanced Machine Learning
 
 ### Fundamental Deep Learning
+### Reading
 
-### Public Paper Reading
-* [TIFUKNN](https://github.com/LLan-ovoy/Memory-Baguette/tree/main/Readings/Paper_Reading/TIFUKNN)
+* Books
+  * [Deep Learning by Ian Goodgellow, etc](https://llan-ovoy.github.io/Memory-Baguette/Readings/Book_Reading/Deep_Learning_by_Ian_Goodgellow_etc/)
 
+* Papers
+  * [TIFUKNN](https://llan-ovoy.github.io/Memory-Baguette/Readings/Paper_Reading/TIFUKNN/)
 
 
 
