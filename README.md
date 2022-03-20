@@ -48,14 +48,24 @@ This is a collection of blogs about data science. Productization of a machine le
   * Decision Tree
   * Random Forest
   * Gradient Boosting
-* Clustering
-  * [Kmeans]()
-
 * Feature Importance
+* Other supervised Learning
+  * K-Nearest Neighbor
+* Unsupervised Learning
+  * Kmeans
+
 
 ### Advanced Machine Learning
 
 ### Fundamental Deep Learning
+
+## Others
+
+### [Articles](https://llan-ovoy.github.io/How-toooo/)
+
+- [Kmeans understanding and its implementation in e-ecommerce](https://llan-ovoy.github.io/How-toooo/Kmeans_ecommerce/)
+- [Review of Recommendation System](https://llan-ovoy.github.io/How-toooo/Recommendation_sys/) and some [side topics](https://github.com/LLan-ovoy/How-toooo/tree/main/Recommendation_sys/Side_Topics/)
+
 ### [Reading](https://llan-ovoy.github.io/Memory-Baguette/Readings)
 
 * Books
@@ -63,7 +73,5 @@ This is a collection of blogs about data science. Productization of a machine le
 
 * Papers
   * [TIFUKNN](https://llan-ovoy.github.io/Memory-Baguette/Readings/Paper_Reading/TIFUKNN/)
-
-
 
 
