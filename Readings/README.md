@@ -1,7 +1,13 @@
 
-# Paper Reading
+# Reading
+
+## Books
+
+#### [Deep Learning by Ian Goodgellow, etc](https://llan-ovoy.github.io/Memory-Baguette/Readings/Book_Reading/Deep_Learning_by_Ian_Goodgellow_etc/)
 
 
+
+## Papers
 
 ### Exploratory Recommendation System
 
@@ -13,7 +19,11 @@ General recommendation system which recommends new items to users.
 
 
 
-### Repeatitive Recommendation System - Next busket prediction
+---
+
+### Repeatitive Recommendation System 
+
+### Next busket prediction
 
 In order to improve customers' loylty, enhancing their repurchase behavior is important. These papers talks about the Next Bucket Prediction Topic.
 
@@ -23,8 +33,8 @@ In order to improve customers' loylty, enhancing their repurchase behavior is im
 
 > A KNN based model with time decay based on purchase sequence.
 
-#### ORA
+#### OAR
 
-[Paper reading - ORA(unfinished)](https://llan-ovoy.github.io/Memory-Baguette/Readings/Paper_Reading/TIFUKNN/)
+[Paper reading - OAR(unfinished)](https://llan-ovoy.github.io/Memory-Baguette/Readings/Paper_Reading/OAR)
 
 > A deep learning based model aiming to get embeddings of customer, item and timestamp.

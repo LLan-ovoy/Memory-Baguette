@@ -56,7 +56,7 @@ This is a collection of blogs about data science. Productization of a machine le
 ### Advanced Machine Learning
 
 ### Fundamental Deep Learning
-### Reading
+### [Reading](https://llan-ovoy.github.io/Memory-Baguette/Readings)
 
 * Books
   * [Deep Learning by Ian Goodgellow, etc](https://llan-ovoy.github.io/Memory-Baguette/Readings/Book_Reading/Deep_Learning_by_Ian_Goodgellow_etc/)
