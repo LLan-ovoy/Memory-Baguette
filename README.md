@@ -22,10 +22,16 @@ This is a collection of blogs about data science. Productization of a machine le
 ### Fundamental knowledge
 
 * Probabilty Theory & Mathmatical Statistics
+  * [Introduction to Mathematical Statistics 5th Edition](https://www.amazon.com/Introduction-Mathematical-Statistics-Robert-Hogg/dp/0023557222)
+  * After obtaining basic statistics knowledge, I recommend this book as a good start:
+    *  [Introduction to Statistical Learning, with applications in R (2nd edition)](https://www.statlearning.com/)
+
 * Linear Algebra
   * [Course Video: Linear Algebra - Professor Gilbert Strang - MIT](https://ocw.mit.edu/courses/mathematics/18-06-linear-algebra-spring-2010/video-lectures/)
 * Python Programming
 * SQL programming
+  * [SQL in 10 Minutes a Day, Sams Teach Yourself 5th Edition](https://www.amazon.com/SQL-Minutes-Sams-Teach-Yourself/dp/0135182794)
+
 
 ### Data Science Skills
 * Data Aquisition
@@ -33,6 +39,7 @@ This is a collection of blogs about data science. Productization of a machine le
 * From SQL to NoSQL
 
 ### Introduction to Machine Learning
+
 * Gradient Descent
 * Tree based methods
   * Decision Tree
@@ -42,15 +49,11 @@ This is a collection of blogs about data science. Productization of a machine le
 * Feature Importance
 
 ### Advanced Machine Learning
-* Multivariate Gradient Descent
-
 
 ### Fundamental Deep Learning
-* Linear regression with Neural Network
 
-
-### Paper Reading
-* TIFUKNN
+### Public Paper Reading
+* [TIFUKNN](https://github.com/LLan-ovoy/Memory-Baguette/tree/main/Readings/Paper_Reading/TIFUKNN)
 
 
 
