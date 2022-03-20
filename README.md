@@ -1,6 +1,8 @@
 
 # Yanan's Blogs - Memory Baguette
 
+> Open the GitHub page [here](https://llan-ovoy.github.io/Memory-Baguette/)
+
 Data science and Machine Learning practice are exciting, as long as the corresponding knowledge can jump out immediately. But the truth is, the memory always sneaks away. 
 
 When I was an undergraduate sophomore, I started using the avatar which I am using here.  It is from the episode of Memory Bread in Doraemon. 
